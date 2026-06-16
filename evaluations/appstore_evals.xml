@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Evaluation questions for appstore-mcp.
+
+  All questions are READ-ONLY and exercise the server's tools (primarily
+  `list_territories`, which returns each territory's resource `id` — an ISO 3166-1
+  alpha-3 code — and an `attributes.currency` field). They target App Store
+  Connect's GLOBAL reference data, which is identical for every account and
+  stable over time, so the answers are verifiable by exact string comparison
+  without seeding account-specific data.
+
+  Running these requires configured credentials (see README) and an MCP eval
+  harness that lets the model call the tools.
+-->
+<evaluation>
+  <qa_pair>
+    <question>Using the App Store Connect tools, find the App Store territory whose name is the United States. What is its territory resource id (the three-letter code)?</question>
+    <answer>USA</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>List App Store territories and find the United Kingdom. What is its territory resource id?</question>
+    <answer>GBR</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>I want to price an in-app purchase in Japan. According to App Store Connect's territory data, what is the territory resource id for Japan?</question>
+    <answer>JPN</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Using the territory data from App Store Connect, what three-letter ISO currency code is associated with the Japan (JPN) territory?</question>
+    <answer>JPY</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>According to App Store Connect's territory data, what currency code applies to the Germany (DEU) territory?</question>
+    <answer>EUR</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>I'm configuring pricing for Australia. What is the App Store Connect territory resource id for Australia?</question>
+    <answer>AUS</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Using the territory data, what currency code does App Store Connect use for the Canada (CAN) territory?</question>
+    <answer>CAD</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>According to App Store Connect's territory data, what currency code is used for the Switzerland (CHE) territory?</question>
+    <answer>CHF</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Find the App Store territory for Brazil using the tools. What is its territory resource id?</question>
+    <answer>BRA</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Using App Store Connect's territory data, what currency code applies to the India (IND) territory?</question>
+    <answer>INR</answer>
+  </qa_pair>
+</evaluation>

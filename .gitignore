@@ -1,0 +1,8 @@
+/target
+
+# Secrets — never commit credentials or the .p8 key.
+.env
+*.p8
+
+# macOS
+.DS_Store
