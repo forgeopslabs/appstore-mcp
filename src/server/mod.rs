@@ -135,6 +135,13 @@ pub(crate) fn push_opt(query: &mut Vec<(String, String)>, key: &str, value: Opti
     }
 }
 
+/// Insert a string attribute into a JSON object only when the option is `Some`.
+pub(crate) fn set_opt_str(obj: &mut serde_json::Value, key: &str, value: &Option<String>) {
+    if let Some(v) = value {
+        obj[key] = serde_json::json!(v);
+    }
+}
+
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for AppStoreServer {
     fn get_info(&self) -> ServerInfo {

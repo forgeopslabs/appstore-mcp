@@ -33,7 +33,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **App Review submission** | `create_review_submission`, `add_review_submission_item`, `submit_review_submission`, `list_review_submissions`, `submit_in_app_purchase`, `set_app_review_detail`, `create_app_encryption_declaration`, `assign_build_encryption_declaration` |
 | **Pricing** | `list_territories`, `list_iap_price_points`, `list_subscription_price_points` |
 | **Availability** | `set_iap_availability`, `set_subscription_availability`, `set_app_availability` |
-| **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review` |
+| **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review`, `set_build_test_notes`, `set_build_beta_detail`, `set_beta_app_review_detail`, `expire_build`, `add_build_to_beta_group` |
 | **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
 | **Assets** | `upload_app_screenshot`, `upload_app_preview`, `create_screenshot_set`, `create_preview_set`, `delete_screenshot_set`, `delete_preview_set`, `reorder_screenshots` |
 | **Subscription offers** | `create_introductory_offer`, `create_promotional_offer`, `create_winback_offer`, `list_winback_offers` |
