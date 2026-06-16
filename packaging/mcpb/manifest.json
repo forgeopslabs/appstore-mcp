@@ -1,0 +1,61 @@
+{
+  "manifest_version": "0.3",
+  "name": "appstore-mcp",
+  "display_name": "App Store Connect",
+  "version": "0.1.0",
+  "description": "Manage the Apple App Store Connect API from Claude: apps, in-app purchases, subscriptions, pricing, App Review submission, TestFlight, provisioning, analytics, and more (101 tools).",
+  "long_description": "A Rust MCP server exposing the Apple App Store Connect API. Curated tools for apps & metadata, in-app purchases, subscriptions and their offers, pricing & availability, App Store versions, App Review submission, TestFlight, provisioning & signing, asset uploads, promoted purchases, customer reviews, phased release, users, in-app events, Xcode Cloud, and analytics reports, plus two generic JSON:API tools that reach any other endpoint. Authenticates with a short-lived ES256 JWT from your App Store Connect API key.",
+  "author": {
+    "name": "forgeopslabs",
+    "url": "https://github.com/forgeopslabs"
+  },
+  "homepage": "https://github.com/forgeopslabs/appstore-mcp",
+  "documentation": "https://github.com/forgeopslabs/appstore-mcp/blob/main/docs/TOOLS.md",
+  "license": "MIT",
+  "keywords": ["app-store-connect", "apple", "ios", "appstore", "testflight", "rust"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/appstore-mcp-macos",
+    "mcp_config": {
+      "command": "server/appstore-mcp-macos",
+      "args": [],
+      "env": {
+        "ASC_ISSUER_ID": "${user_config.asc_issuer_id}",
+        "ASC_KEY_ID": "${user_config.asc_key_id}",
+        "ASC_PRIVATE_KEY_PATH": "${user_config.asc_private_key_path}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "server/appstore-mcp-windows.exe"
+        },
+        "linux": {
+          "command": "server/appstore-mcp-linux"
+        }
+      }
+    }
+  },
+  "user_config": {
+    "asc_issuer_id": {
+      "type": "string",
+      "title": "Issuer ID",
+      "description": "Your App Store Connect issuer UUID (Users and Access -> Integrations -> App Store Connect API).",
+      "required": true
+    },
+    "asc_key_id": {
+      "type": "string",
+      "title": "Key ID",
+      "description": "The API key's Key ID.",
+      "required": true
+    },
+    "asc_private_key_path": {
+      "type": "file",
+      "title": "Private key (.p8)",
+      "description": "The AuthKey_XXXXXX.p8 file you downloaded when creating the API key.",
+      "required": true
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"]
+  }
+}

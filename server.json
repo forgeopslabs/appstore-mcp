@@ -1,0 +1,48 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.forgeopslabs/appstore-mcp",
+  "title": "App Store Connect",
+  "description": "MCP server for the Apple App Store Connect API: 101 tools across apps, in-app purchases, subscriptions & offers, pricing, App Review submission, TestFlight, provisioning, analytics, and more.",
+  "repository": {
+    "url": "https://github.com/forgeopslabs/appstore-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/forgeopslabs/appstore-mcp/releases/download/v0.1.0/appstore-mcp.mcpb",
+      "fileSha256": "REPLACE_WITH_MCPB_SHA256_AT_RELEASE",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ASC_ISSUER_ID",
+          "description": "App Store Connect issuer UUID (Users and Access -> Integrations).",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "ASC_KEY_ID",
+          "description": "The App Store Connect API key's Key ID.",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "ASC_PRIVATE_KEY_PATH",
+          "description": "Path to the downloaded .p8 private key (or use ASC_PRIVATE_KEY for inline PEM).",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "ASC_PRIVATE_KEY",
+          "description": "Inline .p8 PEM contents (alternative to ASC_PRIVATE_KEY_PATH).",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -55,6 +55,63 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 
 See **[docs/TOOLS.md](docs/TOOLS.md)** for each tool's description and parameters.
 
+## Install
+
+Prebuilt binaries for **macOS (universal), Linux (x86-64), and Windows (x86-64)**
+are attached to every [GitHub Release](https://github.com/forgeopslabs/appstore-mcp/releases).
+Pick the channel for your client; all of them need credentials (see [Credentials](#credentials)).
+
+### Claude Desktop — one-click bundle
+
+Download `appstore-mcp.mcpb` from the latest release and open it with Claude Desktop
+(**Settings → Extensions → Install Extension…**, or drag the file onto the window).
+It prompts for your **Issuer ID**, **Key ID**, and **.p8 key file**. The bundle ships
+all three platforms' binaries and selects the right one automatically.
+
+### Claude Code — plugin marketplace
+
+```text
+/plugin marketplace add forgeopslabs/appstore-mcp
+/plugin install appstore-mcp@forgeopslabs
+```
+
+The plugin launches the `appstore-mcp` binary from your `PATH`, so install it first —
+download the binary for your OS from the [latest release](https://github.com/forgeopslabs/appstore-mcp/releases/latest)
+and put it on your `PATH`, or `cargo install --git https://github.com/forgeopslabs/appstore-mcp`.
+Set `ASC_ISSUER_ID`, `ASC_KEY_ID`, and `ASC_PRIVATE_KEY_PATH` in the environment you start
+Claude Code from.
+
+### Codex
+
+Codex configures MCP servers directly (no marketplace). With `appstore-mcp` on your `PATH`:
+
+```bash
+codex mcp add appstore \
+  --env ASC_ISSUER_ID=... --env ASC_KEY_ID=... \
+  --env ASC_PRIVATE_KEY_PATH=/path/AuthKey_XXXXXX.p8 \
+  -- appstore-mcp
+```
+
+or in `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.appstore]
+command = "appstore-mcp"
+args = []
+env = { ASC_ISSUER_ID = "...", ASC_KEY_ID = "...", ASC_PRIVATE_KEY_PATH = "/path/AuthKey_XXXXXX.p8" }
+```
+
+### MCP Registry
+
+Published as `io.github.forgeopslabs/appstore-mcp` (metadata in
+[`server.json`](server.json)) so any MCP-aware client can discover it.
+
+### From source
+
+```bash
+cargo build --release    # -> target/release/appstore-mcp
+```
+
 ## Credentials
 
 Generate a **Team Key** in App Store Connect → *Users and Access → Integrations →

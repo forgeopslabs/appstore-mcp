@@ -2,8 +2,18 @@
 name = "appstore-mcp"
 version = "0.1.0"
 edition = "2021"
-description = "MCP server exposing the Apple App Store Connect API"
+description = "MCP server exposing the Apple App Store Connect API (101 tools)"
 license = "MIT"
+repository = "https://github.com/forgeopslabs/appstore-mcp"
+homepage = "https://github.com/forgeopslabs/appstore-mcp"
+documentation = "https://github.com/forgeopslabs/appstore-mcp/blob/main/docs/TOOLS.md"
+readme = "README.md"
+keywords = ["mcp", "app-store-connect", "apple", "appstore", "testflight"]
+categories = ["command-line-utilities", "api-bindings", "development-tools"]
+
+[profile.release]
+strip = true
+lto = "thin"
 
 [dependencies]
 rmcp = { version = "1.7", features = ["server", "transport-io", "macros"] }

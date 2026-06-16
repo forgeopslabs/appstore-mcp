@@ -1,0 +1,146 @@
+name: Release
+
+# Tag a release: `git tag v0.1.0 && git push --tags`
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # MCP Registry GitHub-OIDC auth (publish job)
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-universal
+            os: macos-latest
+            artifact: appstore-mcp-macos
+          - name: linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: appstore-mcp-linux
+          - name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: appstore-mcp-windows.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build macOS universal binary
+        if: matrix.os == 'macos-latest'
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+          lipo -create -output "${{ matrix.artifact }}" \
+            target/aarch64-apple-darwin/release/appstore-mcp \
+            target/x86_64-apple-darwin/release/appstore-mcp
+          chmod +x "${{ matrix.artifact }}"
+
+      - name: Build (Linux / Windows)
+        if: matrix.os != 'macos-latest'
+        shell: bash
+        run: |
+          rustup target add "${{ matrix.target }}"
+          cargo build --release --locked --target "${{ matrix.target }}"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "target/${{ matrix.target }}/release/appstore-mcp.exe" "${{ matrix.artifact }}"
+          else
+            cp "target/${{ matrix.target }}/release/appstore-mcp" "${{ matrix.artifact }}"
+            chmod +x "${{ matrix.artifact }}"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  package:
+    name: package + release
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      mcpb_sha256: ${{ steps.pack.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Assemble and pack the .mcpb bundle
+        id: pack
+        run: |
+          mkdir -p bundle/server
+          cp dist/appstore-mcp-macos/appstore-mcp-macos        bundle/server/appstore-mcp-macos
+          cp dist/appstore-mcp-linux/appstore-mcp-linux        bundle/server/appstore-mcp-linux
+          cp dist/appstore-mcp-windows.exe/appstore-mcp-windows.exe bundle/server/appstore-mcp-windows.exe
+          chmod +x bundle/server/appstore-mcp-macos bundle/server/appstore-mcp-linux
+          cp packaging/mcpb/manifest.json bundle/manifest.json
+          npx --yes @anthropic-ai/mcpb pack bundle appstore-mcp.mcpb
+          SHA=$(sha256sum appstore-mcp.mcpb | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "$SHA  appstore-mcp.mcpb" > appstore-mcp.mcpb.sha256
+
+      - name: Stage release binaries
+        run: |
+          cp dist/appstore-mcp-macos/appstore-mcp-macos              appstore-mcp-macos-universal
+          cp dist/appstore-mcp-linux/appstore-mcp-linux             appstore-mcp-linux-x86_64
+          cp dist/appstore-mcp-windows.exe/appstore-mcp-windows.exe appstore-mcp-windows-x86_64.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            appstore-mcp.mcpb
+            appstore-mcp.mcpb.sha256
+            appstore-mcp-macos-universal
+            appstore-mcp-linux-x86_64
+            appstore-mcp-windows-x86_64.exe
+
+  publish-registry:
+    name: publish to MCP Registry
+    needs: package
+    runs-on: ubuntu-latest
+    # Opt-in: set repository variable PUBLISH_MCP_REGISTRY=true to enable.
+    if: ${{ github.event_name == 'push' && vars.PUBLISH_MCP_REGISTRY == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher && sudo mv mcp-publisher /usr/local/bin/
+      - name: Finalize server.json (version, .mcpb URL, sha256)
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/appstore-mcp.mcpb"
+          SHA="${{ needs.package.outputs.mcpb_sha256 }}"
+          python3 - "$VER" "$URL" "$SHA" <<'PY'
+          import json, sys
+          ver, url, sha = sys.argv[1:4]
+          s = json.load(open("server.json"))
+          s["version"] = ver
+          pkg = s["packages"][0]
+          pkg["identifier"] = url
+          pkg["fileSha256"] = sha
+          json.dump(s, open("server.json", "w"), indent=2)
+          print(json.dumps(s, indent=2))
+          PY
+      - name: Authenticate (GitHub OIDC) and publish
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish
