@@ -44,6 +44,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **Users & access** | `list_users`, `invite_user`, `update_user`, `remove_user` |
 | **In-app events** | `create_app_event`, `create_app_event_localization`, `upload_app_event_screenshot` |
 | **Xcode Cloud** | `list_ci_products`, `list_ci_workflows`, `start_ci_build`, `get_ci_build_run`, `list_ci_build_actions` |
+| **Analytics reports** | `request_analytics_report`, `list_analytics_reports`, `list_analytics_report_instances`, `list_analytics_report_segments` |
 
 ## Credentials
 

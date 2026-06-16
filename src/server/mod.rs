@@ -6,6 +6,7 @@
 //! sums those routers into the single [`ToolRouter`] stored on the struct, and
 //! `#[tool_handler(router = self.tool_router)]` dispatches off it.
 
+mod analytics;
 mod apps;
 mod assets;
 mod availability;
@@ -77,6 +78,7 @@ impl AppStoreServer {
         Self {
             client: Arc::new(AscClient::new(config)),
             tool_router: Self::generic_router()
+                + Self::analytics_router()
                 + Self::apps_router()
                 + Self::iap_router()
                 + Self::subscriptions_router()
