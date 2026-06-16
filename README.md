@@ -34,7 +34,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **Pricing** | `list_territories`, `list_iap_price_points`, `list_subscription_price_points` |
 | **Availability** | `set_iap_availability`, `set_subscription_availability`, `set_app_availability` |
 | **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review`, `set_build_test_notes`, `set_build_beta_detail`, `set_beta_app_review_detail`, `expire_build`, `add_build_to_beta_group` |
-| **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
+| **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `enable_bundle_id_capability`, `disable_bundle_id_capability`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
 | **Assets** | `upload_app_screenshot`, `upload_app_preview`, `create_screenshot_set`, `create_preview_set`, `delete_screenshot_set`, `delete_preview_set`, `reorder_screenshots` |
 | **Subscription offers** | `create_introductory_offer`, `create_promotional_offer`, `create_winback_offer`, `list_winback_offers` |
 | **Offer codes** | `create_offer_code`, `generate_one_time_use_codes`, `create_custom_offer_code`, `list_offer_codes` |
