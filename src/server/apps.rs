@@ -72,9 +72,9 @@ pub struct CreateAppInfoLocalizationArgs {
     pub app_info_id: String,
     /// BCP-47 locale, e.g. "en-US".
     pub locale: String,
-    /// Localized app name.
-    #[serde(default)]
-    pub name: Option<String>,
+    /// Localized app name (required by the API). To change only privacy fields on
+    /// an existing localization, use update_app_info_localization instead.
+    pub name: String,
     /// Localized subtitle.
     #[serde(default)]
     pub subtitle: Option<String>,
@@ -264,8 +264,7 @@ fn age_rating_body(id: &str, attributes: Value) -> Value {
 }
 
 fn app_info_localization_create_body(args: &CreateAppInfoLocalizationArgs) -> Value {
-    let mut attrs = json!({ "locale": args.locale });
-    set_opt_str(&mut attrs, "name", &args.name);
+    let mut attrs = json!({ "locale": args.locale, "name": args.name });
     set_opt_str(&mut attrs, "subtitle", &args.subtitle);
     set_opt_str(&mut attrs, "privacyPolicyUrl", &args.privacy_policy_url);
     set_opt_str(&mut attrs, "privacyPolicyText", &args.privacy_policy_text);
@@ -307,11 +306,11 @@ mod tests {
     }
 
     #[test]
-    fn app_info_localization_create_includes_only_set_fields() {
+    fn app_info_localization_create_includes_required_and_set_fields() {
         let args = CreateAppInfoLocalizationArgs {
             app_info_id: "ai-1".into(),
             locale: "en-US".into(),
-            name: Some("My App".into()),
+            name: "My App".into(),
             subtitle: None,
             privacy_policy_url: Some("https://example.com/privacy".into()),
             privacy_policy_text: None,

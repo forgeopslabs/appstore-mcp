@@ -108,19 +108,14 @@ pub struct SetReviewDetailArgs {
 pub struct CreateEncryptionDeclarationArgs {
     /// The app's App Store Connect ID.
     pub app_id: String,
-    /// Target platform.
-    pub platform: Platform,
-    /// Whether the app uses encryption at all.
-    pub uses_encryption: bool,
-    /// Whether the app qualifies for an export-compliance exemption.
-    #[serde(default)]
-    pub exempt: Option<bool>,
-    #[serde(default)]
-    pub contains_proprietary_cryptography: Option<bool>,
-    #[serde(default)]
-    pub contains_third_party_cryptography: Option<bool>,
-    #[serde(default)]
-    pub available_on_french_store: Option<bool>,
+    /// A description of how the app uses encryption.
+    pub app_description: String,
+    /// Whether the app implements any proprietary/non-standard encryption algorithms.
+    pub contains_proprietary_cryptography: bool,
+    /// Whether the app uses any third-party encryption.
+    pub contains_third_party_cryptography: bool,
+    /// Whether the app will be available on the French App Store.
+    pub available_on_french_store: bool,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -273,10 +268,13 @@ attach a build with assign_build_encryption_declaration."
         &self,
         Parameters(args): Parameters<AssignEncryptionDeclarationArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let body = assign_build_body(&args.build_id);
+        // A build has a to-one `appEncryptionDeclaration` relationship; set it
+        // from the build side (the declaration's `builds` relationship is not
+        // a PATCH target).
+        let body = build_encryption_linkage_body(&args.declaration_id);
         let path = format!(
-            "/v1/appEncryptionDeclarations/{}/relationships/builds",
-            args.declaration_id
+            "/v1/builds/{}/relationships/appEncryptionDeclaration",
+            args.build_id
         );
         let value = self
             .client
@@ -379,26 +377,15 @@ fn review_detail_update_body(id: &str, attributes: Value) -> Value {
 }
 
 fn encryption_declaration_body(args: &CreateEncryptionDeclarationArgs) -> Value {
-    let mut attrs = json!({
-        "usesEncryption": args.uses_encryption,
-        "platform": args.platform.as_api(),
-    });
-    if let Some(v) = args.exempt {
-        attrs["exempt"] = json!(v);
-    }
-    if let Some(v) = args.contains_proprietary_cryptography {
-        attrs["containsProprietaryCryptography"] = json!(v);
-    }
-    if let Some(v) = args.contains_third_party_cryptography {
-        attrs["containsThirdPartyCryptography"] = json!(v);
-    }
-    if let Some(v) = args.available_on_french_store {
-        attrs["availableOnFrenchStore"] = json!(v);
-    }
     json!({
         "data": {
             "type": "appEncryptionDeclarations",
-            "attributes": attrs,
+            "attributes": {
+                "appDescription": args.app_description,
+                "containsProprietaryCryptography": args.contains_proprietary_cryptography,
+                "containsThirdPartyCryptography": args.contains_third_party_cryptography,
+                "availableOnFrenchStore": args.available_on_french_store,
+            },
             "relationships": {
                 "app": { "data": { "type": "apps", "id": args.app_id } }
             }
@@ -406,8 +393,9 @@ fn encryption_declaration_body(args: &CreateEncryptionDeclarationArgs) -> Value 
     })
 }
 
-fn assign_build_body(build_id: &str) -> Value {
-    json!({ "data": [ { "type": "builds", "id": build_id } ] })
+/// To-one linkage body for setting a build's `appEncryptionDeclaration`.
+fn build_encryption_linkage_body(declaration_id: &str) -> Value {
+    json!({ "data": { "type": "appEncryptionDeclarations", "id": declaration_id } })
 }
 
 /// Insert a string attribute only when present.
@@ -512,36 +500,34 @@ mod tests {
     }
 
     #[test]
-    fn encryption_declaration_body_shape() {
+    fn encryption_declaration_body_has_required_attributes_only() {
         let args = CreateEncryptionDeclarationArgs {
             app_id: "app-1".into(),
-            platform: Platform::Ios,
-            uses_encryption: true,
-            exempt: Some(true),
-            contains_proprietary_cryptography: None,
-            contains_third_party_cryptography: Some(false),
-            available_on_french_store: None,
+            app_description: "Uses HTTPS only".into(),
+            contains_proprietary_cryptography: false,
+            contains_third_party_cryptography: true,
+            available_on_french_store: false,
         };
         let b = encryption_declaration_body(&args);
         assert_eq!(b["data"]["type"], "appEncryptionDeclarations");
-        assert_eq!(b["data"]["attributes"]["usesEncryption"], true);
-        assert_eq!(b["data"]["attributes"]["platform"], "IOS");
-        assert_eq!(b["data"]["attributes"]["exempt"], true);
-        assert_eq!(
-            b["data"]["attributes"]["containsThirdPartyCryptography"],
-            false
-        );
-        assert!(b["data"]["attributes"]
-            .get("containsProprietaryCryptography")
-            .is_none());
+        let attrs = &b["data"]["attributes"];
+        assert_eq!(attrs["appDescription"], "Uses HTTPS only");
+        assert_eq!(attrs["containsProprietaryCryptography"], false);
+        assert_eq!(attrs["containsThirdPartyCryptography"], true);
+        assert_eq!(attrs["availableOnFrenchStore"], false);
+        // The API has no usesEncryption/platform/exempt on create — must be absent.
+        assert!(attrs.get("usesEncryption").is_none());
+        assert!(attrs.get("platform").is_none());
+        assert!(attrs.get("exempt").is_none());
         assert_eq!(b["data"]["relationships"]["app"]["data"]["id"], "app-1");
     }
 
     #[test]
-    fn assign_build_body_is_to_many_array() {
-        let b = assign_build_body("build-42");
-        assert!(b["data"].is_array());
-        assert_eq!(b["data"][0]["type"], "builds");
-        assert_eq!(b["data"][0]["id"], "build-42");
+    fn build_encryption_linkage_is_to_one() {
+        let b = build_encryption_linkage_body("aed-42");
+        // To-one linkage: a single object, not an array.
+        assert!(b["data"].is_object());
+        assert_eq!(b["data"]["type"], "appEncryptionDeclarations");
+        assert_eq!(b["data"]["id"], "aed-42");
     }
 }

@@ -21,8 +21,8 @@ pub struct ProductAvailabilityArgs {
     /// Territory IDs to make the product available in, e.g. ["USA", "GBR"].
     pub territory_ids: Vec<String>,
     /// Whether to make it available in future new territories automatically.
-    #[serde(default)]
-    pub available_in_new_territories: Option<bool>,
+    /// Required by the API.
+    pub available_in_new_territories: bool,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -32,8 +32,8 @@ pub struct AppAvailabilityArgs {
     /// Territory IDs to make the app available in, e.g. ["USA", "GBR"].
     pub territory_ids: Vec<String>,
     /// Whether to make it available in future new territories automatically.
-    #[serde(default)]
-    pub available_in_new_territories: Option<bool>,
+    /// Required by the API.
+    pub available_in_new_territories: bool,
 }
 
 #[tool_router(router = availability_router, vis = "pub(crate)")]
@@ -118,14 +118,10 @@ fn product_availability_body(
     relationship_type: &str,
     args: &ProductAvailabilityArgs,
 ) -> Value {
-    let mut attributes = json!({});
-    if let Some(v) = args.available_in_new_territories {
-        attributes["availableInNewTerritories"] = json!(v);
-    }
     json!({
         "data": {
             "type": resource_type,
-            "attributes": attributes,
+            "attributes": { "availableInNewTerritories": args.available_in_new_territories },
             "relationships": {
                 relationship_key: {
                     "data": { "type": relationship_type, "id": args.product_id }
@@ -157,15 +153,10 @@ fn app_availability_body(args: &AppAvailabilityArgs) -> Value {
         }));
     }
 
-    let mut attributes = json!({});
-    if let Some(v) = args.available_in_new_territories {
-        attributes["availableInNewTerritories"] = json!(v);
-    }
-
     json!({
         "data": {
             "type": "appAvailabilities",
-            "attributes": attributes,
+            "attributes": { "availableInNewTerritories": args.available_in_new_territories },
             "relationships": {
                 "app": { "data": { "type": "apps", "id": args.app_id } },
                 "territoryAvailabilities": { "data": data_refs }
@@ -183,7 +174,7 @@ mod tests {
         ProductAvailabilityArgs {
             product_id: "iap-1".into(),
             territory_ids: vec!["USA".into(), "GBR".into()],
-            available_in_new_territories: Some(true),
+            available_in_new_territories: true,
         }
     }
 
@@ -231,11 +222,11 @@ mod tests {
     }
 
     #[test]
-    fn product_availability_omits_flag_when_absent() {
+    fn product_availability_always_includes_required_flag() {
         let args = ProductAvailabilityArgs {
             product_id: "iap-1".into(),
             territory_ids: vec!["USA".into()],
-            available_in_new_territories: None,
+            available_in_new_territories: false,
         };
         let b = product_availability_body(
             "inAppPurchaseAvailabilities",
@@ -243,9 +234,8 @@ mod tests {
             "inAppPurchases",
             &args,
         );
-        assert!(b["data"]["attributes"]
-            .get("availableInNewTerritories")
-            .is_none());
+        // The API requires this attribute, so it must always be present.
+        assert_eq!(b["data"]["attributes"]["availableInNewTerritories"], false);
     }
 
     #[test]
@@ -253,7 +243,7 @@ mod tests {
         let args = AppAvailabilityArgs {
             app_id: "app-9".into(),
             territory_ids: vec!["USA".into(), "JPN".into()],
-            available_in_new_territories: Some(false),
+            available_in_new_territories: false,
         };
         let b = app_availability_body(&args);
         assert_eq!(b["data"]["type"], "appAvailabilities");
