@@ -1,12 +1,18 @@
 # appstore-mcp
 
 An [MCP](https://modelcontextprotocol.io) server, written in Rust, that exposes
-the **Apple App Store Connect API** to AI agents. It can create and manage apps,
-in-app purchases, subscriptions, pricing, App Store versions and metadata,
-TestFlight, provisioning, and upload screenshots/previews — and reach *any* other
-App Store Connect endpoint through two generic JSON:API tools.
+the **Apple App Store Connect API** to AI agents. It covers the full product
+lifecycle — apps & metadata, in-app purchases, subscriptions and their offers,
+pricing & availability, App Store versions, App Review submission, TestFlight,
+provisioning & signing, asset uploads, promoted purchases, customer reviews,
+phased release, users & access, in-app events, Xcode Cloud, and analytics
+reports — across **101 tools**, and can reach *any* other App Store Connect
+endpoint through two generic JSON:API tools.
 
 Built on the official [`rmcp`](https://crates.io/crates/rmcp) SDK over stdio.
+
+📖 **[Full tool reference → docs/TOOLS.md](docs/TOOLS.md)** — every tool's purpose
+and parameters.
 
 ## Design: hybrid coverage
 
@@ -46,6 +52,8 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **In-app events** | `create_app_event`, `create_app_event_localization`, `upload_app_event_screenshot` |
 | **Xcode Cloud** | `list_ci_products`, `list_ci_workflows`, `start_ci_build`, `get_ci_build_run`, `list_ci_build_actions` |
 | **Analytics reports** | `request_analytics_report`, `list_analytics_reports`, `list_analytics_report_instances`, `list_analytics_report_segments` |
+
+See **[docs/TOOLS.md](docs/TOOLS.md)** for each tool's description and parameters.
 
 ## Credentials
 
@@ -136,6 +144,13 @@ npx @modelcontextprotocol/inspector ./target/release/appstore-mcp
 cargo test                              # unit tests (JWT signing, MD5, body builders)
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
+```
+
+Regenerate the tool reference after adding/changing tools (needs the release
+binary; no credentials required):
+
+```bash
+cargo build --release && python3 scripts/gen_tools_doc.py   # rewrites docs/TOOLS.md
 ```
 
 ### Live integration tests
