@@ -32,12 +32,12 @@ jobs:
           printf '%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
             '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' > /tmp/rpc.jsonl
-          ( cat /tmp/rpc.jsonl; sleep 2 ) | "$BIN" > /tmp/out.jsonl || true
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' > rpc.jsonl
+          ( cat rpc.jsonl; sleep 2 ) | "$BIN" > out.jsonl || true
           python3 - <<'PY'
           import json
           n = 0
-          for line in open('/tmp/out.jsonl'):
+          for line in open('out.jsonl'):
               line = line.strip()
               if not line:
                   continue
