@@ -47,10 +47,14 @@ ASC_PRIVATE_KEY or ASC_PRIVATE_KEY_PATH). If they are unset, tools return a \
 configuration error.
 
 Coverage is hybrid:
-- Curated tools exist for apps, in-app purchases, subscriptions, versions & \
-  metadata, pricing, TestFlight, provisioning, and asset uploads.
+- Curated tools exist for apps & metadata, in-app purchases, subscriptions \
+  (incl. introductory/promotional/win-back offers and offer codes), versions & \
+  metadata, pricing, availability, App Review submission, TestFlight, \
+  provisioning & bundle-ID capabilities, asset uploads, promoted purchases, \
+  customer reviews, phased release, users & access, in-app events, Xcode Cloud, \
+  and Analytics reports.
 - The generic tools `appstore_request` and `appstore_list` can reach ANY App \
-  Store Connect endpoint (TestFlight, Game Center, finance reports, etc.) using \
+  Store Connect endpoint (Game Center, App Clips, finance reports, etc.) using \
   raw JSON:API documents — use them for anything without a dedicated tool.
 
 Tips:

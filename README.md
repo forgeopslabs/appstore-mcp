@@ -14,12 +14,13 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 [JSON:API](https://jsonapi.org). Rather than a tool per endpoint, this server is
 **hybrid**:
 
-- **Curated tools** (61 total) for the common, multi-step, or error-prone
-  workflows — apps & metadata, IAPs, subscriptions, versions, pricing,
-  availability, App Review submission, TestFlight, provisioning, and asset uploads.
+- **Curated tools** (99) for the common, multi-step, or error-prone workflows —
+  apps & metadata, IAPs, subscriptions & offers, versions, pricing, availability,
+  App Review submission, TestFlight, provisioning, asset uploads, promoted
+  purchases, customer reviews, phased release, users, in-app events, Xcode Cloud,
+  and analytics reports.
 - **Two generic escape-hatch tools** — `appstore_request` and `appstore_list` —
-  that can call *any* endpoint (Game Center, customer reviews, app events, etc.)
-  with raw JSON:API documents.
+  that can call *any* endpoint with raw JSON:API documents.
 
 ## Tools
 

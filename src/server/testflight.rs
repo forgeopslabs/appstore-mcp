@@ -350,12 +350,14 @@ testers). Uses the betaGroups/{id}/relationships/builds to-many endpoint."
     ) -> Result<CallToolResult, McpError> {
         let body = add_build_to_beta_group_body(&args.build_id);
         let path = format!("/v1/betaGroups/{}/relationships/builds", args.beta_group_id);
-        let value = self
-            .client
+        // This relationship endpoint returns 204 No Content; surface a useful result.
+        self.client
             .post(&path, body)
             .await
             .map_err(AppStoreServer::map_err)?;
-        AppStoreServer::ok_json(value)
+        AppStoreServer::ok_json(
+            json!({ "added": { "build_id": args.build_id, "beta_group_id": args.beta_group_id } }),
+        )
     }
 }
 
