@@ -254,31 +254,12 @@ effective immediately."
         Parameters(args): Parameters<SetIapPriceArgs>,
     ) -> Result<CallToolResult, McpError> {
         let base_territory = args.base_territory.unwrap_or_else(|| "USA".to_string());
-        // A developer-defined temporary id links the relationship to the included resource.
-        const TEMP_ID: &str = "new-iap-price-1";
-        let body = json!({
-            "data": {
-                "type": "inAppPurchasePriceSchedules",
-                "relationships": {
-                    "inAppPurchase": { "data": { "type": "inAppPurchases", "id": args.iap_id } },
-                    "baseTerritory": { "data": { "type": "territories", "id": base_territory } },
-                    "manualPrices": { "data": [ { "type": "inAppPurchasePrices", "id": TEMP_ID } ] }
-                }
-            },
-            "included": [
-                {
-                    "type": "inAppPurchasePrices",
-                    "id": TEMP_ID,
-                    "attributes": { "startDate": args.start_date },
-                    "relationships": {
-                        "inAppPurchasePricePoint": {
-                            "data": { "type": "inAppPurchasePricePoints", "id": args.price_point_id }
-                        },
-                        "inAppPurchaseV2": { "data": { "type": "inAppPurchases", "id": args.iap_id } }
-                    }
-                }
-            ]
-        });
+        let body = iap_price_schedule_body(
+            &args.iap_id,
+            &args.price_point_id,
+            &base_territory,
+            args.start_date.as_deref(),
+        );
         let value = self
             .client
             .post("/v1/inAppPurchasePriceSchedules", body)
@@ -310,5 +291,94 @@ upload → commit, with MD5 verification). Provide a local image file path."
             .await
             .map_err(AppStoreServer::map_err)?;
         AppStoreServer::ok_json(value)
+    }
+}
+
+// ---- Pure JSON:API document builders (unit-tested below) --------------------
+
+/// Build an inAppPurchasePriceSchedules document.
+///
+/// The price is a temporary `inAppPurchasePrices` resource in `included`, linked
+/// from `manualPrices` by a temporary id. App Store Connect requires that id to
+/// use the `${...}` placeholder format — plain ids with hyphens are rejected with
+/// `ENTITY_ERROR.INCLUDED.INVALID_ID` (found via live integration testing).
+fn iap_price_schedule_body(
+    iap_id: &str,
+    price_point_id: &str,
+    base_territory: &str,
+    start_date: Option<&str>,
+) -> Value {
+    const TEMP_ID: &str = "${price1}";
+    json!({
+        "data": {
+            "type": "inAppPurchasePriceSchedules",
+            "relationships": {
+                "inAppPurchase": { "data": { "type": "inAppPurchases", "id": iap_id } },
+                "baseTerritory": { "data": { "type": "territories", "id": base_territory } },
+                "manualPrices": { "data": [ { "type": "inAppPurchasePrices", "id": TEMP_ID } ] }
+            }
+        },
+        "included": [
+            {
+                "type": "inAppPurchasePrices",
+                "id": TEMP_ID,
+                "attributes": { "startDate": start_date },
+                "relationships": {
+                    "inAppPurchasePricePoint": {
+                        "data": { "type": "inAppPurchasePricePoints", "id": price_point_id }
+                    }
+                }
+            }
+        ]
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn iap_type_maps_to_api_strings() {
+        assert_eq!(IapType::Consumable.as_api(), "CONSUMABLE");
+        assert_eq!(IapType::NonConsumable.as_api(), "NON_CONSUMABLE");
+        assert_eq!(
+            IapType::NonRenewingSubscription.as_api(),
+            "NON_RENEWING_SUBSCRIPTION"
+        );
+    }
+
+    #[test]
+    fn price_schedule_uses_placeholder_temp_id_consistently() {
+        let b = iap_price_schedule_body("iap-1", "pp-9", "USA", None);
+        assert_eq!(b["data"]["type"], "inAppPurchasePriceSchedules");
+
+        // The manualPrices ref and the included resource must share the SAME
+        // `${...}`-formatted temporary id (Apple rejects hyphenated ids).
+        let manual_id = &b["data"]["relationships"]["manualPrices"]["data"][0]["id"];
+        let included_id = &b["included"][0]["id"];
+        assert_eq!(manual_id, "${price1}");
+        assert_eq!(included_id, "${price1}");
+        assert_eq!(manual_id, included_id);
+
+        assert_eq!(b["data"]["relationships"]["inAppPurchase"]["data"]["id"], "iap-1");
+        assert_eq!(b["data"]["relationships"]["baseTerritory"]["data"]["id"], "USA");
+        assert_eq!(
+            b["included"][0]["relationships"]["inAppPurchasePricePoint"]["data"]["id"],
+            "pp-9"
+        );
+        // The redundant inAppPurchaseV2 relationship must NOT be present — Apple
+        // accepts the document without it.
+        assert!(b["included"][0]["relationships"]
+            .get("inAppPurchaseV2")
+            .is_none());
+        // startDate omitted -> null (effective immediately).
+        assert!(b["included"][0]["attributes"]["startDate"].is_null());
+    }
+
+    #[test]
+    fn price_schedule_includes_start_date_when_given() {
+        let b = iap_price_schedule_body("iap-1", "pp-9", "GBR", Some("2026-07-01"));
+        assert_eq!(b["included"][0]["attributes"]["startDate"], "2026-07-01");
+        assert_eq!(b["data"]["relationships"]["baseTerritory"]["data"]["id"], "GBR");
     }
 }

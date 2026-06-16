@@ -143,7 +143,9 @@ fn app_availability_body(args: &AppAvailabilityArgs) -> Value {
     let mut data_refs = Vec::with_capacity(args.territory_ids.len());
     let mut included = Vec::with_capacity(args.territory_ids.len());
     for (i, territory) in args.territory_ids.iter().enumerate() {
-        let temp_id = format!("avail-{i}");
+        // App Store Connect requires temporary `included` ids in the `${...}`
+        // placeholder format; hyphenated ids are rejected with INVALID_ID.
+        let temp_id = format!("${{avail{i}}}");
         data_refs.push(json!({ "type": "territoryAvailabilities", "id": temp_id }));
         included.push(json!({
             "type": "territoryAvailabilities",
@@ -266,9 +268,11 @@ mod tests {
         assert_eq!(included.len(), 2);
 
         // Each data ref's temp id must resolve to an included resource that
-        // points at the matching territory.
-        assert_eq!(refs[0]["id"], "avail-0");
-        assert_eq!(included[0]["id"], "avail-0");
+        // points at the matching territory. Apple requires the `${...}` format.
+        assert_eq!(refs[0]["id"], "${avail0}");
+        assert_eq!(included[0]["id"], "${avail0}");
+        assert_eq!(refs[1]["id"], "${avail1}");
+        assert_eq!(included[1]["id"], "${avail1}");
         assert_eq!(included[0]["type"], "territoryAvailabilities");
         assert_eq!(included[0]["attributes"]["available"], true);
         assert_eq!(
