@@ -12,7 +12,7 @@
     {
       "registryType": "mcpb",
       "identifier": "https://github.com/forgeopslabs/appstore-mcp/releases/download/v0.1.0/appstore-mcp.mcpb",
-      "fileSha256": "REPLACE_WITH_MCPB_SHA256_AT_RELEASE",
+      "fileSha256": "6237aeb7e8d4d4a7b55c64911787111515326182b5cb1b89d78443800152f66c",
       "transport": {
         "type": "stdio"
       },

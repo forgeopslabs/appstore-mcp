@@ -1,0 +1,54 @@
+name: Publish to MCP Registry
+
+# Manually publish a release's .mcpb to the MCP Registry
+# (https://registry.modelcontextprotocol.io) under io.github.forgeopslabs/appstore-mcp.
+# Run AFTER the Release workflow has produced the .mcpb for the tag:
+#   gh workflow run publish-mcp.yml -f tag=v0.1.0
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag whose appstore-mcp.mcpb should be published (e.g. v0.1.0)"
+        required: true
+        default: v0.1.0
+
+permissions:
+  id-token: write # GitHub OIDC auth to the registry (no secret needed)
+  contents: read
+
+jobs:
+  publish:
+    name: publish ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mcp-publisher
+        run: curl -fSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Finalize server.json from the released .mcpb
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          VER="${TAG#v}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/appstore-mcp.mcpb"
+          # Hash the EXACT artifact clients will download, so fileSha256 always matches.
+          curl -fSL "$URL" -o published.mcpb
+          SHA="$(sha256sum published.mcpb | cut -d' ' -f1)"
+          python3 - "$VER" "$URL" "$SHA" <<'PY'
+          import json, sys
+          ver, url, sha = sys.argv[1:4]
+          s = json.load(open("server.json"))
+          s["version"] = ver
+          pkg = s["packages"][0]
+          pkg["identifier"] = url
+          pkg["fileSha256"] = sha
+          json.dump(s, open("server.json", "w"), indent=2)
+          print(json.dumps(s, indent=2))
+          PY
+
+      - name: Authenticate (GitHub OIDC) and publish
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

@@ -11,7 +11,6 @@ env:
 
 permissions:
   contents: write # create the GitHub Release
-  id-token: write # MCP Registry GitHub-OIDC auth (publish job)
 
 jobs:
   build:
@@ -112,35 +111,7 @@ jobs:
             appstore-mcp-linux-x86_64
             appstore-mcp-windows-x86_64.exe
 
-  publish-registry:
-    name: publish to MCP Registry
-    needs: package
-    runs-on: ubuntu-latest
-    # Opt-in: set repository variable PUBLISH_MCP_REGISTRY=true to enable.
-    if: ${{ github.event_name == 'push' && vars.PUBLISH_MCP_REGISTRY == 'true' }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install mcp-publisher
-        run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
-            | tar xz mcp-publisher && sudo mv mcp-publisher /usr/local/bin/
-      - name: Finalize server.json (version, .mcpb URL, sha256)
-        run: |
-          VER="${GITHUB_REF_NAME#v}"
-          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/appstore-mcp.mcpb"
-          SHA="${{ needs.package.outputs.mcpb_sha256 }}"
-          python3 - "$VER" "$URL" "$SHA" <<'PY'
-          import json, sys
-          ver, url, sha = sys.argv[1:4]
-          s = json.load(open("server.json"))
-          s["version"] = ver
-          pkg = s["packages"][0]
-          pkg["identifier"] = url
-          pkg["fileSha256"] = sha
-          json.dump(s, open("server.json", "w"), indent=2)
-          print(json.dumps(s, indent=2))
-          PY
-      - name: Authenticate (GitHub OIDC) and publish
-        run: |
-          mcp-publisher login github-oidc
-          mcp-publisher publish
+  # MCP Registry publishing lives in a separate, manually-triggered workflow
+  # (.github/workflows/publish-mcp.yml) so it can publish any tag on demand and
+  # always hashes the exact released artifact. Run it after this workflow:
+  #   gh workflow run publish-mcp.yml -f tag=v0.1.0
