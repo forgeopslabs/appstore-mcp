@@ -9,6 +9,7 @@
 mod apps;
 mod assets;
 mod availability;
+mod events;
 mod generic;
 mod iap;
 mod offer_codes;
@@ -86,6 +87,7 @@ impl AppStoreServer {
                 + Self::assets_router()
                 + Self::submission_router()
                 + Self::availability_router()
+                + Self::events_router()
                 + Self::offers_router()
                 + Self::offer_codes_router()
                 + Self::promotions_router()

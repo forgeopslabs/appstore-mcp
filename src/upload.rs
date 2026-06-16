@@ -25,6 +25,8 @@ impl AscClient {
     ///
     /// * `collection_path` — the reservation collection, e.g. `"/v1/appScreenshots"`.
     /// * `resource_type` — the JSON:API `type`, e.g. `"appScreenshots"`.
+    /// * `extra_attributes` — additional reservation attributes (a JSON object) merged
+    ///   into `{ fileName, fileSize }`. Pass `serde_json::json!({})` when none are needed.
     /// * `relationships` — the parent relationship object, e.g.
     ///   `{"appScreenshotSet": {"data": {"type": "appScreenshotSets", "id": "..."}}}`.
     /// * `file_path` — local path to the asset file to upload.
@@ -34,6 +36,7 @@ impl AscClient {
         &self,
         collection_path: &str,
         resource_type: &str,
+        extra_attributes: Value,
         relationships: Value,
         file_path: &str,
     ) -> Result<Value, AscError> {
@@ -53,11 +56,25 @@ impl AscClient {
             .to_string();
         let checksum = md5_hex(&bytes);
 
-        // 1. Reserve.
+        // 1. Reserve — build attributes from { fileName, fileSize } merged with any extras.
+        if !extra_attributes.is_null() && !extra_attributes.is_object() {
+            return Err(AscError::Upload(format!(
+                "extra_attributes must be a JSON object or null, got: {extra_attributes}"
+            )));
+        }
+        let mut reserve_attrs = json!({ "fileName": file_name, "fileSize": bytes.len() });
+        // Callers must not include `fileName`/`fileSize` in extras — they would overwrite the computed values.
+        if let (Some(base), Some(extra)) =
+            (reserve_attrs.as_object_mut(), extra_attributes.as_object())
+        {
+            for (k, v) in extra {
+                base.insert(k.clone(), v.clone());
+            }
+        }
         let reserve_body = json!({
             "data": {
                 "type": resource_type,
-                "attributes": { "fileName": file_name, "fileSize": bytes.len() },
+                "attributes": reserve_attrs,
                 "relationships": relationships,
             }
         });

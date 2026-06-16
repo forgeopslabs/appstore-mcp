@@ -42,6 +42,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **Customer reviews** | `list_customer_reviews`, `respond_to_review`, `delete_review_response` |
 | **Phased release** | `start_phased_release`, `update_phased_release` |
 | **Users & access** | `list_users`, `invite_user`, `update_user`, `remove_user` |
+| **In-app events** | `create_app_event`, `create_app_event_localization`, `upload_app_event_screenshot` |
 | **Xcode Cloud** | `list_ci_products`, `list_ci_workflows`, `start_ci_build`, `get_ci_build_run`, `list_ci_build_actions` |
 
 ## Credentials
