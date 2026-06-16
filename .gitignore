@@ -9,3 +9,6 @@
 
 # Local credential scratch files (never commit)
 appstore-connect.txt
+
+# Python
+__pycache__/

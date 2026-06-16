@@ -13,7 +13,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use super::versions::Platform;
-use super::{push_opt, AppStoreServer};
+use super::{push_opt, set_opt_str, AppStoreServer};
 
 /// What a review-submission item points at.
 #[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
@@ -396,13 +396,6 @@ fn encryption_declaration_body(args: &CreateEncryptionDeclarationArgs) -> Value 
 /// To-one linkage body for setting a build's `appEncryptionDeclaration`.
 fn build_encryption_linkage_body(declaration_id: &str) -> Value {
     json!({ "data": { "type": "appEncryptionDeclarations", "id": declaration_id } })
-}
-
-/// Insert a string attribute only when present.
-fn set_opt_str(obj: &mut Value, key: &str, value: &Option<String>) {
-    if let Some(v) = value {
-        obj[key] = json!(v);
-    }
 }
 
 #[cfg(test)]

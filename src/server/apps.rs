@@ -7,7 +7,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, AppStoreServer};
+use super::{push_opt, set_opt_str, AppStoreServer};
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ListAppsArgs {
@@ -284,13 +284,6 @@ fn app_info_localization_update_body(id: &str, attributes: Value) -> Value {
     json!({
         "data": { "type": "appInfoLocalizations", "id": id, "attributes": attributes }
     })
-}
-
-/// Insert a string attribute only when present.
-fn set_opt_str(obj: &mut Value, key: &str, value: &Option<String>) {
-    if let Some(v) = value {
-        obj[key] = json!(v);
-    }
 }
 
 #[cfg(test)]

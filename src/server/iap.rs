@@ -285,6 +285,7 @@ upload → commit, with MD5 verification). Provide a local image file path."
             .upload_asset(
                 "/v1/inAppPurchaseAppStoreReviewScreenshots",
                 "inAppPurchaseAppStoreReviewScreenshots",
+                json!({}),
                 relationships,
                 &args.file_path,
             )

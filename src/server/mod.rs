@@ -6,17 +6,25 @@
 //! sums those routers into the single [`ToolRouter`] stored on the struct, and
 //! `#[tool_handler(router = self.tool_router)]` dispatches off it.
 
+mod analytics;
 mod apps;
 mod assets;
 mod availability;
+mod events;
 mod generic;
 mod iap;
+mod offer_codes;
+mod offers;
 mod pricing;
+mod promotions;
 mod provisioning;
+mod reviews;
 mod submission;
 mod subscriptions;
 mod testflight;
+mod users;
 mod versions;
+mod xcode_cloud;
 
 use std::sync::Arc;
 
@@ -39,10 +47,14 @@ ASC_PRIVATE_KEY or ASC_PRIVATE_KEY_PATH). If they are unset, tools return a \
 configuration error.
 
 Coverage is hybrid:
-- Curated tools exist for apps, in-app purchases, subscriptions, versions & \
-  metadata, pricing, TestFlight, provisioning, and asset uploads.
+- Curated tools exist for apps & metadata, in-app purchases, subscriptions \
+  (incl. introductory/promotional/win-back offers and offer codes), versions & \
+  metadata, pricing, availability, App Review submission, TestFlight, \
+  provisioning & bundle-ID capabilities, asset uploads, promoted purchases, \
+  customer reviews, phased release, users & access, in-app events, Xcode Cloud, \
+  and Analytics reports.
 - The generic tools `appstore_request` and `appstore_list` can reach ANY App \
-  Store Connect endpoint (TestFlight, Game Center, finance reports, etc.) using \
+  Store Connect endpoint (Game Center, App Clips, finance reports, etc.) using \
   raw JSON:API documents — use them for anything without a dedicated tool.
 
 Tips:
@@ -70,6 +82,7 @@ impl AppStoreServer {
         Self {
             client: Arc::new(AscClient::new(config)),
             tool_router: Self::generic_router()
+                + Self::analytics_router()
                 + Self::apps_router()
                 + Self::iap_router()
                 + Self::subscriptions_router()
@@ -79,7 +92,14 @@ impl AppStoreServer {
                 + Self::provisioning_router()
                 + Self::assets_router()
                 + Self::submission_router()
-                + Self::availability_router(),
+                + Self::availability_router()
+                + Self::events_router()
+                + Self::offers_router()
+                + Self::offer_codes_router()
+                + Self::promotions_router()
+                + Self::reviews_router()
+                + Self::users_router()
+                + Self::xcode_cloud_router(),
         }
     }
 
@@ -122,6 +142,13 @@ fn value_to_query_string(value: &Value) -> String {
 pub(crate) fn push_opt(query: &mut Vec<(String, String)>, key: &str, value: Option<impl ToString>) {
     if let Some(v) = value {
         query.push((key.to_string(), v.to_string()));
+    }
+}
+
+/// Insert a string attribute into a JSON object only when the option is `Some`.
+pub(crate) fn set_opt_str(obj: &mut serde_json::Value, key: &str, value: &Option<String>) {
+    if let Some(v) = value {
+        obj[key] = serde_json::json!(v);
     }
 }
 
