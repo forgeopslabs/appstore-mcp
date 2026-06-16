@@ -22,6 +22,7 @@ mod subscriptions;
 mod testflight;
 mod users;
 mod versions;
+mod xcode_cloud;
 
 use std::sync::Arc;
 
@@ -89,7 +90,8 @@ impl AppStoreServer {
                 + Self::offer_codes_router()
                 + Self::promotions_router()
                 + Self::reviews_router()
-                + Self::users_router(),
+                + Self::users_router()
+                + Self::xcode_cloud_router(),
         }
     }
 
