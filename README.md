@@ -41,6 +41,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **Promoted purchases** | `create_promoted_purchase`, `update_promoted_purchase`, `set_promoted_purchase_order`, `list_promoted_purchases` |
 | **Customer reviews** | `list_customer_reviews`, `respond_to_review`, `delete_review_response` |
 | **Phased release** | `start_phased_release`, `update_phased_release` |
+| **Users & access** | `list_users`, `invite_user`, `update_user`, `remove_user` |
 
 ## Credentials
 

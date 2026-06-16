@@ -20,6 +20,7 @@ mod reviews;
 mod submission;
 mod subscriptions;
 mod testflight;
+mod users;
 mod versions;
 
 use std::sync::Arc;
@@ -87,7 +88,8 @@ impl AppStoreServer {
                 + Self::offers_router()
                 + Self::offer_codes_router()
                 + Self::promotions_router()
-                + Self::reviews_router(),
+                + Self::reviews_router()
+                + Self::users_router(),
         }
     }
 
