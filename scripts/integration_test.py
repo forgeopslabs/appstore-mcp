@@ -242,6 +242,13 @@ def tier2_read_sweep(mc, app, subscription_id, rep):
         rep.add("list_winback_offers", None, "no subscription to read")
 
 
+def tier3_read_sweep(mc, rep):
+    """Read-only checks of the Tier 3 account-level endpoints."""
+    print("\n== Tier 3 read-only sweep ==")
+    rep.add("list_users", *_simple(mc, "list_users", {"limit": 5}))
+    rep.add("list_ci_products", *_simple(mc, "list_ci_products", {"limit": 5}))
+
+
 def _simple(mc, tool, args):
     ok, v = mc.call(tool, args)
     return ok, summarize(v) if ok else str(v)[:160]
@@ -299,6 +306,7 @@ def main():
     try:
         subscription_id = read_only_sweep(mc, args.app, rep)
         tier2_read_sweep(mc, args.app, subscription_id, rep)
+        tier3_read_sweep(mc, rep)
         if args.write:
             write_lifecycle(mc, args.app, rep)
     finally:

@@ -14,12 +14,13 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 [JSON:API](https://jsonapi.org). Rather than a tool per endpoint, this server is
 **hybrid**:
 
-- **Curated tools** (61 total) for the common, multi-step, or error-prone
-  workflows — apps & metadata, IAPs, subscriptions, versions, pricing,
-  availability, App Review submission, TestFlight, provisioning, and asset uploads.
+- **Curated tools** (99) for the common, multi-step, or error-prone workflows —
+  apps & metadata, IAPs, subscriptions & offers, versions, pricing, availability,
+  App Review submission, TestFlight, provisioning, asset uploads, promoted
+  purchases, customer reviews, phased release, users, in-app events, Xcode Cloud,
+  and analytics reports.
 - **Two generic escape-hatch tools** — `appstore_request` and `appstore_list` —
-  that can call *any* endpoint (Game Center, customer reviews, app events, etc.)
-  with raw JSON:API documents.
+  that can call *any* endpoint with raw JSON:API documents.
 
 ## Tools
 
@@ -33,14 +34,18 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **App Review submission** | `create_review_submission`, `add_review_submission_item`, `submit_review_submission`, `list_review_submissions`, `submit_in_app_purchase`, `set_app_review_detail`, `create_app_encryption_declaration`, `assign_build_encryption_declaration` |
 | **Pricing** | `list_territories`, `list_iap_price_points`, `list_subscription_price_points` |
 | **Availability** | `set_iap_availability`, `set_subscription_availability`, `set_app_availability` |
-| **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review` |
-| **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
+| **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review`, `set_build_test_notes`, `set_build_beta_detail`, `set_beta_app_review_detail`, `expire_build`, `add_build_to_beta_group` |
+| **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `enable_bundle_id_capability`, `disable_bundle_id_capability`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
 | **Assets** | `upload_app_screenshot`, `upload_app_preview`, `create_screenshot_set`, `create_preview_set`, `delete_screenshot_set`, `delete_preview_set`, `reorder_screenshots` |
 | **Subscription offers** | `create_introductory_offer`, `create_promotional_offer`, `create_winback_offer`, `list_winback_offers` |
 | **Offer codes** | `create_offer_code`, `generate_one_time_use_codes`, `create_custom_offer_code`, `list_offer_codes` |
 | **Promoted purchases** | `create_promoted_purchase`, `update_promoted_purchase`, `set_promoted_purchase_order`, `list_promoted_purchases` |
 | **Customer reviews** | `list_customer_reviews`, `respond_to_review`, `delete_review_response` |
 | **Phased release** | `start_phased_release`, `update_phased_release` |
+| **Users & access** | `list_users`, `invite_user`, `update_user`, `remove_user` |
+| **In-app events** | `create_app_event`, `create_app_event_localization`, `upload_app_event_screenshot` |
+| **Xcode Cloud** | `list_ci_products`, `list_ci_workflows`, `start_ci_build`, `get_ci_build_run`, `list_ci_build_actions` |
+| **Analytics reports** | `request_analytics_report`, `list_analytics_reports`, `list_analytics_report_instances`, `list_analytics_report_segments` |
 
 ## Credentials
 

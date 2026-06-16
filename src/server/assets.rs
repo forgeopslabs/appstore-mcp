@@ -81,6 +81,7 @@ with MD5 verification). Provide the set ID and a local image path."
             .upload_asset(
                 "/v1/appScreenshots",
                 "appScreenshots",
+                json!({}),
                 relationships,
                 &args.file_path,
             )
@@ -108,6 +109,7 @@ with MD5 verification). Provide the set ID and a local video path."
             .upload_asset(
                 "/v1/appPreviews",
                 "appPreviews",
+                json!({}),
                 relationships,
                 &args.file_path,
             )
