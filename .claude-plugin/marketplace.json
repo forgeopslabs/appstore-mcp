@@ -1,0 +1,21 @@
+{
+  "name": "forgeopslabs",
+  "owner": {
+    "name": "forgeopslabs"
+  },
+  "description": "MCP servers and tools from forgeopslabs.",
+  "plugins": [
+    {
+      "name": "appstore-mcp",
+      "source": "./plugins/appstore-mcp",
+      "description": "Apple App Store Connect API — 101 tools (apps, in-app purchases, subscriptions, TestFlight, provisioning, analytics, and more).",
+      "version": "0.1.0",
+      "author": {
+        "name": "forgeopslabs"
+      },
+      "homepage": "https://github.com/forgeopslabs/appstore-mcp",
+      "license": "MIT",
+      "keywords": ["app-store-connect", "apple", "ios", "appstore", "testflight"]
+    }
+  ]
+}
