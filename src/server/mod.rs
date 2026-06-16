@@ -11,8 +11,12 @@ mod assets;
 mod availability;
 mod generic;
 mod iap;
+mod offer_codes;
+mod offers;
 mod pricing;
+mod promotions;
 mod provisioning;
+mod reviews;
 mod submission;
 mod subscriptions;
 mod testflight;
@@ -79,7 +83,11 @@ impl AppStoreServer {
                 + Self::provisioning_router()
                 + Self::assets_router()
                 + Self::submission_router()
-                + Self::availability_router(),
+                + Self::availability_router()
+                + Self::offers_router()
+                + Self::offer_codes_router()
+                + Self::promotions_router()
+                + Self::reviews_router(),
         }
     }
 

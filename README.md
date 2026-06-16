@@ -36,6 +36,11 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review` |
 | **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
 | **Assets** | `upload_app_screenshot`, `upload_app_preview`, `create_screenshot_set`, `create_preview_set`, `delete_screenshot_set`, `delete_preview_set`, `reorder_screenshots` |
+| **Subscription offers** | `create_introductory_offer`, `create_promotional_offer`, `create_winback_offer`, `list_winback_offers` |
+| **Offer codes** | `create_offer_code`, `generate_one_time_use_codes`, `create_custom_offer_code`, `list_offer_codes` |
+| **Promoted purchases** | `create_promoted_purchase`, `update_promoted_purchase`, `set_promoted_purchase_order`, `list_promoted_purchases` |
+| **Customer reviews** | `list_customer_reviews`, `respond_to_review`, `delete_review_response` |
+| **Phased release** | `start_phased_release`, `update_phased_release` |
 
 ## Credentials
 
