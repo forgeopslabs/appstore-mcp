@@ -8,10 +8,12 @@
 
 mod apps;
 mod assets;
+mod availability;
 mod generic;
 mod iap;
 mod pricing;
 mod provisioning;
+mod submission;
 mod subscriptions;
 mod testflight;
 mod versions;
@@ -47,7 +49,13 @@ Tips:
 - IDs are opaque strings returned by list/get tools; resolve them first.
 - Pricing requires a price-point ID: use the pricing tools to look them up.
 - Most write operations use JSON:API bodies of the form \
-  {\"data\": {\"type\": ..., \"attributes\": {...}, \"relationships\": {...}}}.";
+  {\"data\": {\"type\": ..., \"attributes\": {...}, \"relationships\": {...}}}.
+
+Limitations (enforced by Apple, not this server):
+- New apps CANNOT be created via the API (the `apps` resource allows only \
+  GET and UPDATE). Create the app in the App Store Connect website first; you \
+  can pre-create its bundle ID with create_bundle_id.
+- Sales/finance reports return gzipped TSV, not JSON:API, and are not wrapped here.";
 
 /// The App Store Connect MCP server.
 #[derive(Clone)]
@@ -69,7 +77,9 @@ impl AppStoreServer {
                 + Self::pricing_router()
                 + Self::testflight_router()
                 + Self::provisioning_router()
-                + Self::assets_router(),
+                + Self::assets_router()
+                + Self::submission_router()
+                + Self::availability_router(),
         }
     }
 
