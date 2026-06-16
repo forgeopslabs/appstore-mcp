@@ -209,11 +209,138 @@ for a version + locale."
             .map_err(AppStoreServer::map_err)?;
         AppStoreServer::ok_json(value)
     }
+
+    /// Start a phased (staged) release for a version.
+    #[tool(
+        description = "Start a phased (7-day staged) release for an App Store version. Optionally \
+set the initial state (defaults to ACTIVE)."
+    )]
+    async fn start_phased_release(
+        &self,
+        Parameters(args): Parameters<StartPhasedReleaseArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let state = args.state.unwrap_or(PhasedReleaseState::Active);
+        let body = phased_release_create_body(&args.version_id, state);
+        let value = self
+            .client
+            .post("/v1/appStoreVersionPhasedReleases", body)
+            .await
+            .map_err(AppStoreServer::map_err)?;
+        AppStoreServer::ok_json(value)
+    }
+
+    /// Update a phased release's state (pause, resume, or complete).
+    #[tool(
+        description = "Update a phased release: PAUSED to pause, ACTIVE to resume, COMPLETE to \
+release to all users immediately."
+    )]
+    async fn update_phased_release(
+        &self,
+        Parameters(args): Parameters<UpdatePhasedReleaseArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let body = phased_release_update_body(&args.phased_release_id, args.state);
+        let value = self
+            .client
+            .patch(
+                &format!(
+                    "/v1/appStoreVersionPhasedReleases/{}",
+                    args.phased_release_id
+                ),
+                body,
+            )
+            .await
+            .map_err(AppStoreServer::map_err)?;
+        AppStoreServer::ok_json(value)
+    }
+}
+
+/// State of a phased (staged) release.
+#[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PhasedReleaseState {
+    Inactive,
+    Active,
+    Paused,
+    Complete,
+}
+
+impl PhasedReleaseState {
+    fn as_api(self) -> &'static str {
+        match self {
+            PhasedReleaseState::Inactive => "INACTIVE",
+            PhasedReleaseState::Active => "ACTIVE",
+            PhasedReleaseState::Paused => "PAUSED",
+            PhasedReleaseState::Complete => "COMPLETE",
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct StartPhasedReleaseArgs {
+    /// The appStoreVersion ID.
+    pub version_id: String,
+    /// Optional initial state (defaults to ACTIVE).
+    #[serde(default)]
+    pub state: Option<PhasedReleaseState>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct UpdatePhasedReleaseArgs {
+    /// The appStoreVersionPhasedRelease ID.
+    pub phased_release_id: String,
+    /// New state: PAUSED, ACTIVE, or COMPLETE.
+    pub state: PhasedReleaseState,
+}
+
+fn phased_release_create_body(version_id: &str, state: PhasedReleaseState) -> Value {
+    json!({
+        "data": {
+            "type": "appStoreVersionPhasedReleases",
+            "attributes": { "phasedReleaseState": state.as_api() },
+            "relationships": {
+                "appStoreVersion": { "data": { "type": "appStoreVersions", "id": version_id } }
+            }
+        }
+    })
+}
+
+fn phased_release_update_body(id: &str, state: PhasedReleaseState) -> Value {
+    json!({
+        "data": {
+            "type": "appStoreVersionPhasedReleases",
+            "id": id,
+            "attributes": { "phasedReleaseState": state.as_api() }
+        }
+    })
 }
 
 /// Insert `key: value` into a JSON object when the option is `Some`.
 fn set_opt(obj: &mut Value, key: &str, value: Option<String>) {
     if let Some(v) = value {
         obj[key] = json!(v);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn phased_release_create_body_shape() {
+        let b = phased_release_create_body("ver-1", PhasedReleaseState::Active);
+        assert_eq!(b["data"]["type"], "appStoreVersionPhasedReleases");
+        assert_eq!(b["data"]["attributes"]["phasedReleaseState"], "ACTIVE");
+        assert_eq!(
+            b["data"]["relationships"]["appStoreVersion"]["data"]["id"],
+            "ver-1"
+        );
+    }
+
+    #[test]
+    fn phased_release_update_body_shape() {
+        let b = phased_release_update_body("pr-2", PhasedReleaseState::Complete);
+        assert_eq!(b["data"]["id"], "pr-2");
+        assert_eq!(b["data"]["attributes"]["phasedReleaseState"], "COMPLETE");
+        assert!(b["data"].get("relationships").is_none());
     }
 }

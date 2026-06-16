@@ -222,6 +222,25 @@ def read_only_sweep(mc, app, rep):
     else:
         rep.add("list_iap_price_points", None, "no existing IAP (covered by --write)")
 
+    return subscription_id
+
+
+def tier2_read_sweep(mc, app, subscription_id, rep):
+    """Read-only checks of the Tier 2 monetization/engagement endpoints."""
+    print("\n== Tier 2 read-only sweep ==")
+    rep.add("list_customer_reviews", *_simple(mc, "list_customer_reviews",
+            {"app_id": app, "sort": "-createdDate", "limit": 5}))
+    rep.add("list_promoted_purchases", *_simple(mc, "list_promoted_purchases",
+            {"app_id": app, "limit": 5}))
+    if subscription_id:
+        rep.add("list_offer_codes", *_simple(mc, "list_offer_codes",
+                {"subscription_id": subscription_id, "limit": 5}))
+        rep.add("list_winback_offers", *_simple(mc, "list_winback_offers",
+                {"subscription_id": subscription_id, "limit": 5}))
+    else:
+        rep.add("list_offer_codes", None, "no subscription to read")
+        rep.add("list_winback_offers", None, "no subscription to read")
+
 
 def _simple(mc, tool, args):
     ok, v = mc.call(tool, args)
@@ -278,7 +297,8 @@ def main():
     print(f"== {info.get('name')} {info.get('version')} | app {args.app} ==")
     rep = Report()
     try:
-        read_only_sweep(mc, args.app, rep)
+        subscription_id = read_only_sweep(mc, args.app, rep)
+        tier2_read_sweep(mc, args.app, subscription_id, rep)
         if args.write:
             write_lifecycle(mc, args.app, rep)
     finally:
