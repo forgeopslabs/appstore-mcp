@@ -56,6 +56,47 @@ pub struct UpdateAppInfoArgs {
     pub attributes: Value,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SetAgeRatingArgs {
+    /// The ageRatingDeclaration ID (from appInfo's ageRatingDeclaration relationship —
+    /// fetch via get_app or list_app_infos with include=ageRatingDeclaration).
+    pub age_rating_declaration_id: String,
+    /// Questionnaire answers, e.g. {"violenceCartoonOrFantasy": "NONE",
+    /// "gamblingSimulated": "FREQUENT_OR_INTENSE", "unrestrictedWebAccess": false}.
+    pub attributes: Value,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CreateAppInfoLocalizationArgs {
+    /// The appInfo ID (from list_app_infos).
+    pub app_info_id: String,
+    /// BCP-47 locale, e.g. "en-US".
+    pub locale: String,
+    /// Localized app name.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Localized subtitle.
+    #[serde(default)]
+    pub subtitle: Option<String>,
+    /// Privacy policy URL.
+    #[serde(default)]
+    pub privacy_policy_url: Option<String>,
+    /// Privacy policy text (for platforms that show inline text, e.g. tvOS).
+    #[serde(default)]
+    pub privacy_policy_text: Option<String>,
+    /// Privacy choices URL.
+    #[serde(default)]
+    pub privacy_choices_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct UpdateAppInfoLocalizationArgs {
+    /// The appInfoLocalization ID.
+    pub localization_id: String,
+    /// Attributes to update (name, subtitle, privacyPolicyUrl, privacyPolicyText, privacyChoicesUrl).
+    pub attributes: Value,
+}
+
 #[tool_router(router = apps_router, vis = "pub(crate)")]
 impl AppStoreServer {
     /// List apps in the account.
@@ -147,5 +188,152 @@ age-rating relationships for the app."
             .await
             .map_err(AppStoreServer::map_err)?;
         AppStoreServer::ok_json(value)
+    }
+
+    /// Set the age-rating questionnaire answers.
+    #[tool(
+        description = "Set an app's age-rating questionnaire answers (required before submission). \
+Pass the ageRatingDeclaration ID and the questionnaire attributes. Enum values are typically \
+NONE / INFREQUENT_OR_MILD / FREQUENT_OR_INTENSE, plus booleans for items like gambling and \
+unrestrictedWebAccess."
+    )]
+    async fn set_age_rating(
+        &self,
+        Parameters(args): Parameters<SetAgeRatingArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let body = age_rating_body(&args.age_rating_declaration_id, args.attributes);
+        let value = self
+            .client
+            .patch(
+                &format!(
+                    "/v1/ageRatingDeclarations/{}",
+                    args.age_rating_declaration_id
+                ),
+                body,
+            )
+            .await
+            .map_err(AppStoreServer::map_err)?;
+        AppStoreServer::ok_json(value)
+    }
+
+    /// Create a localized app-info entry (name/subtitle/privacy).
+    #[tool(
+        description = "Create a localized app name, subtitle, and privacy policy for a locale \
+(appInfoLocalizations). This is the app-level name/subtitle, distinct from per-version metadata."
+    )]
+    async fn create_app_info_localization(
+        &self,
+        Parameters(args): Parameters<CreateAppInfoLocalizationArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let body = app_info_localization_create_body(&args);
+        let value = self
+            .client
+            .post("/v1/appInfoLocalizations", body)
+            .await
+            .map_err(AppStoreServer::map_err)?;
+        AppStoreServer::ok_json(value)
+    }
+
+    /// Update a localized app-info entry.
+    #[tool(
+        description = "Update an appInfoLocalization by ID (name, subtitle, privacy URLs/text)."
+    )]
+    async fn update_app_info_localization(
+        &self,
+        Parameters(args): Parameters<UpdateAppInfoLocalizationArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let body = app_info_localization_update_body(&args.localization_id, args.attributes);
+        let value = self
+            .client
+            .patch(
+                &format!("/v1/appInfoLocalizations/{}", args.localization_id),
+                body,
+            )
+            .await
+            .map_err(AppStoreServer::map_err)?;
+        AppStoreServer::ok_json(value)
+    }
+}
+
+// ---- Pure JSON:API document builders (unit-tested below) --------------------
+
+fn age_rating_body(id: &str, attributes: Value) -> Value {
+    json!({
+        "data": { "type": "ageRatingDeclarations", "id": id, "attributes": attributes }
+    })
+}
+
+fn app_info_localization_create_body(args: &CreateAppInfoLocalizationArgs) -> Value {
+    let mut attrs = json!({ "locale": args.locale });
+    set_opt_str(&mut attrs, "name", &args.name);
+    set_opt_str(&mut attrs, "subtitle", &args.subtitle);
+    set_opt_str(&mut attrs, "privacyPolicyUrl", &args.privacy_policy_url);
+    set_opt_str(&mut attrs, "privacyPolicyText", &args.privacy_policy_text);
+    set_opt_str(&mut attrs, "privacyChoicesUrl", &args.privacy_choices_url);
+    json!({
+        "data": {
+            "type": "appInfoLocalizations",
+            "attributes": attrs,
+            "relationships": {
+                "appInfo": { "data": { "type": "appInfos", "id": args.app_info_id } }
+            }
+        }
+    })
+}
+
+fn app_info_localization_update_body(id: &str, attributes: Value) -> Value {
+    json!({
+        "data": { "type": "appInfoLocalizations", "id": id, "attributes": attributes }
+    })
+}
+
+/// Insert a string attribute only when present.
+fn set_opt_str(obj: &mut Value, key: &str, value: &Option<String>) {
+    if let Some(v) = value {
+        obj[key] = json!(v);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn age_rating_body_shape() {
+        let b = age_rating_body("ard-1", json!({ "gamblingSimulated": "NONE" }));
+        assert_eq!(b["data"]["type"], "ageRatingDeclarations");
+        assert_eq!(b["data"]["id"], "ard-1");
+        assert_eq!(b["data"]["attributes"]["gamblingSimulated"], "NONE");
+    }
+
+    #[test]
+    fn app_info_localization_create_includes_only_set_fields() {
+        let args = CreateAppInfoLocalizationArgs {
+            app_info_id: "ai-1".into(),
+            locale: "en-US".into(),
+            name: Some("My App".into()),
+            subtitle: None,
+            privacy_policy_url: Some("https://example.com/privacy".into()),
+            privacy_policy_text: None,
+            privacy_choices_url: None,
+        };
+        let b = app_info_localization_create_body(&args);
+        assert_eq!(b["data"]["type"], "appInfoLocalizations");
+        assert_eq!(b["data"]["attributes"]["locale"], "en-US");
+        assert_eq!(b["data"]["attributes"]["name"], "My App");
+        assert_eq!(
+            b["data"]["attributes"]["privacyPolicyUrl"],
+            "https://example.com/privacy"
+        );
+        assert!(b["data"]["attributes"].get("subtitle").is_none());
+        assert_eq!(b["data"]["relationships"]["appInfo"]["data"]["id"], "ai-1");
+    }
+
+    #[test]
+    fn app_info_localization_update_has_id_no_relationship() {
+        let b = app_info_localization_update_body("loc-2", json!({ "subtitle": "Now faster" }));
+        assert_eq!(b["data"]["id"], "loc-2");
+        assert_eq!(b["data"]["attributes"]["subtitle"], "Now faster");
+        assert!(b["data"].get("relationships").is_none());
     }
 }

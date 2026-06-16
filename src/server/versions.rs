@@ -20,7 +20,7 @@ pub enum Platform {
 }
 
 impl Platform {
-    fn as_api(self) -> &'static str {
+    pub(crate) fn as_api(self) -> &'static str {
         match self {
             Platform::Ios => "IOS",
             Platform::MacOs => "MAC_OS",

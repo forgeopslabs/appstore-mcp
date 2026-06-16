@@ -6,3 +6,6 @@
 
 # macOS
 .DS_Store
+
+# Local credential scratch files (never commit)
+appstore-connect.txt
