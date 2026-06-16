@@ -360,8 +360,14 @@ mod tests {
         assert_eq!(included_id, "${price1}");
         assert_eq!(manual_id, included_id);
 
-        assert_eq!(b["data"]["relationships"]["inAppPurchase"]["data"]["id"], "iap-1");
-        assert_eq!(b["data"]["relationships"]["baseTerritory"]["data"]["id"], "USA");
+        assert_eq!(
+            b["data"]["relationships"]["inAppPurchase"]["data"]["id"],
+            "iap-1"
+        );
+        assert_eq!(
+            b["data"]["relationships"]["baseTerritory"]["data"]["id"],
+            "USA"
+        );
         assert_eq!(
             b["included"][0]["relationships"]["inAppPurchasePricePoint"]["data"]["id"],
             "pp-9"
@@ -379,6 +385,9 @@ mod tests {
     fn price_schedule_includes_start_date_when_given() {
         let b = iap_price_schedule_body("iap-1", "pp-9", "GBR", Some("2026-07-01"));
         assert_eq!(b["included"][0]["attributes"]["startDate"], "2026-07-01");
-        assert_eq!(b["data"]["relationships"]["baseTerritory"]["data"]["id"], "GBR");
+        assert_eq!(
+            b["data"]["relationships"]["baseTerritory"]["data"]["id"],
+            "GBR"
+        );
     }
 }

@@ -110,12 +110,35 @@ npx @modelcontextprotocol/inspector ./target/release/appstore-mcp
 - **Not covered:** sales/finance report endpoints return gzipped TSV (not JSON:API)
   and are out of scope for these tools.
 
+## Limitations (enforced by Apple)
+
+- **You cannot create an app via the API.** The `apps` resource only allows GET and
+  UPDATE — `POST /v1/apps` returns `403 FORBIDDEN_ERROR`. Create the app record in
+  the [App Store Connect website](https://appstoreconnect.apple.com) (*Apps → ➕ →
+  New App*); you can pre-create its bundle ID with `create_bundle_id`. All other
+  tools operate on an existing app.
+- A deleted in-app purchase's `productId` is permanently reserved by Apple and
+  cannot be reused.
+
 ## Development
 
 ```bash
-cargo test                              # unit tests (JWT signing, MD5)
+cargo test                              # unit tests (JWT signing, MD5, body builders)
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
+```
+
+### Live integration tests
+
+`scripts/integration_test.py` drives the compiled server against the real API.
+Read-only by default; `--write` adds a self-cleaning IAP lifecycle.
+
+```bash
+cargo build --release
+# Credentials via env (ASC_ISSUER_ID/ASC_KEY_ID/ASC_PRIVATE_KEY_PATH) or local
+# appstore-connect.txt + AuthKey_*.p8 in the repo root (both gitignored).
+python3 scripts/integration_test.py --app <APP_ID>          # read-only sweep
+python3 scripts/integration_test.py --app <APP_ID> --write  # + write lifecycle
 ```
 
 ## License
