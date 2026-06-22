@@ -1170,12 +1170,14 @@ Get a custom product page by ID, with optional includes.
 
 ### `create_custom_product_page`
 
-Create a custom product page for an app (reference name). Then add a version, localizations, and screenshot/preview sets.
+Create a custom product page for an app. Apple creates it together with an initial version and a localization for `locale` (with optional promotional text), so the page is ready for screenshot/preview sets. Add further versions/localizations with create_custom_product_page_version / create_custom_product_page_localization.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `app_id` | string | **yes** | The app's App Store Connect ID. |
+| `locale` | string | **yes** | BCP-47 locale for the page's initial localization, e.g. "en-US". Apple requires a custom product page to be created together with an initial version and localization, so a locale is required here. |
 | `name` | string | **yes** | Reference name for the page (not customer-facing). |
+| `promotional_text` | string | no | Optional promotional text shown on the page for that locale. |
 
 ### `update_custom_product_page`
 

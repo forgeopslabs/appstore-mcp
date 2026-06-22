@@ -50,6 +50,13 @@ pub struct CreatePageArgs {
     pub app_id: String,
     /// Reference name for the page (not customer-facing).
     pub name: String,
+    /// BCP-47 locale for the page's initial localization, e.g. "en-US". Apple
+    /// requires a custom product page to be created together with an initial
+    /// version and localization, so a locale is required here.
+    pub locale: String,
+    /// Optional promotional text shown on the page for that locale.
+    #[serde(default)]
+    pub promotional_text: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -175,14 +182,21 @@ impl AppStoreServer {
 
     /// Create a custom product page.
     #[tool(
-        description = "Create a custom product page for an app (reference name). Then add a \
-version, localizations, and screenshot/preview sets."
+        description = "Create a custom product page for an app. Apple creates it together with an \
+initial version and a localization for `locale` (with optional promotional text), so the page is \
+ready for screenshot/preview sets. Add further versions/localizations with \
+create_custom_product_page_version / create_custom_product_page_localization."
     )]
     async fn create_custom_product_page(
         &self,
         Parameters(args): Parameters<CreatePageArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let body = page_create_body(&args.app_id, &args.name);
+        let body = page_create_body(
+            &args.app_id,
+            &args.name,
+            &args.locale,
+            args.promotional_text.as_deref(),
+        );
         let value = self
             .client
             .post("/v1/appCustomProductPages", body)
@@ -368,15 +382,54 @@ type IPHONE_67). Upload videos into it with upload_app_preview."
 
 // ---- Pure JSON:API document builders (unit-tested below) --------------------
 
-fn page_create_body(app_id: &str, name: &str) -> Value {
+/// Build the JSON:API document to create a custom product page.
+///
+/// Apple rejects a bare `{name, app}` create with
+/// `ENTITY_ERROR.RELATIONSHIP.REQUIRED` — a page must be created together with
+/// an initial version and localization. They are supplied inline in `included`
+/// and linked by `${...}` temporary ids (the format App Store Connect requires).
+/// The inline localization must NOT carry an `appCustomProductPageVersion`
+/// back-relationship — Apple rejects an inline-include id there; the
+/// version → localization link is enough.
+fn page_create_body(
+    app_id: &str,
+    name: &str,
+    locale: &str,
+    promotional_text: Option<&str>,
+) -> Value {
+    const VER: &str = "${ver}";
+    const LOC: &str = "${loc}";
+    let mut loc_attrs = json!({ "locale": locale });
+    if let Some(t) = promotional_text {
+        loc_attrs["promotionalText"] = json!(t);
+    }
     json!({
         "data": {
             "type": "appCustomProductPages",
             "attributes": { "name": name },
             "relationships": {
-                "app": { "data": { "type": "apps", "id": app_id } }
+                "app": { "data": { "type": "apps", "id": app_id } },
+                "appCustomProductPageVersions": {
+                    "data": [ { "type": "appCustomProductPageVersions", "id": VER } ]
+                }
             }
-        }
+        },
+        "included": [
+            {
+                "type": "appCustomProductPageVersions",
+                "id": VER,
+                "relationships": {
+                    "appCustomProductPageLocalizations": {
+                        "data": [ { "type": "appCustomProductPageLocalizations", "id": LOC } ]
+                    }
+                }
+            },
+            {
+                "type": "appCustomProductPageLocalizations",
+                "id": LOC,
+                "attributes": loc_attrs
+            }
+        ]
     })
 }
 
@@ -477,11 +530,33 @@ mod tests {
 
     #[test]
     fn page_create_shape() {
-        let b = page_create_body("app-1", "Summer Campaign");
+        let b = page_create_body("app-1", "Summer Campaign", "en-US", Some("Big sale!"));
         assert_eq!(b["data"]["type"], "appCustomProductPages");
         assert_eq!(b["data"]["attributes"]["name"], "Summer Campaign");
-        assert_eq!(b["data"]["relationships"]["app"]["data"]["type"], "apps");
         assert_eq!(b["data"]["relationships"]["app"]["data"]["id"], "app-1");
+        // Page links the inline version by a ${...} temp id...
+        let ver_ref = &b["data"]["relationships"]["appCustomProductPageVersions"]["data"][0];
+        assert_eq!(ver_ref["type"], "appCustomProductPageVersions");
+        assert_eq!(ver_ref["id"], "${ver}");
+        // ...which is created in `included` and links the inline localization.
+        let inc = b["included"].as_array().unwrap();
+        assert_eq!(inc[0]["id"], "${ver}");
+        assert_eq!(
+            inc[0]["relationships"]["appCustomProductPageLocalizations"]["data"][0]["id"],
+            "${loc}"
+        );
+        assert_eq!(inc[1]["type"], "appCustomProductPageLocalizations");
+        assert_eq!(inc[1]["id"], "${loc}");
+        assert_eq!(inc[1]["attributes"]["locale"], "en-US");
+        assert_eq!(inc[1]["attributes"]["promotionalText"], "Big sale!");
+        // The inline localization must NOT back-reference the version (Apple
+        // rejects an inline-include id in that relationship).
+        assert!(inc[1].get("relationships").is_none());
+        // promotionalText omitted when None.
+        let b2 = page_create_body("app-1", "X", "fr-FR", None);
+        assert!(b2["included"][1]["attributes"]
+            .get("promotionalText")
+            .is_none());
     }
 
     #[test]
