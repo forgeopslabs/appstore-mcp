@@ -7,7 +7,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, AppStoreServer};
+use super::{de_coerce_json, push_opt, AppStoreServer};
 
 /// Renewal period of a subscription.
 #[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
@@ -74,6 +74,7 @@ pub struct UpdateSubscriptionArgs {
     /// The subscription ID.
     pub subscription_id: String,
     /// Attributes to update, e.g. {"name": "...", "groupLevel": 2}.
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 

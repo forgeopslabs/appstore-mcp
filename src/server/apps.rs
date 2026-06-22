@@ -7,7 +7,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, set_opt_str, AppStoreServer};
+use super::{de_coerce_json, push_opt, set_opt_str, AppStoreServer};
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ListAppsArgs {
@@ -39,6 +39,7 @@ pub struct UpdateAppArgs {
     /// The app's App Store Connect ID.
     pub app_id: String,
     /// Attributes to update, e.g. {"primaryLocale": "en-US", "availableInNewTerritories": true}.
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 
@@ -53,6 +54,7 @@ pub struct UpdateAppInfoArgs {
     /// The appInfo ID (from list_app_infos).
     pub app_info_id: String,
     /// Attributes to update, e.g. category/content-rights relationships are set separately.
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 
@@ -63,6 +65,7 @@ pub struct SetAgeRatingArgs {
     pub age_rating_declaration_id: String,
     /// Questionnaire answers, e.g. {"violenceCartoonOrFantasy": "NONE",
     /// "gamblingSimulated": "FREQUENT_OR_INTENSE", "unrestrictedWebAccess": false}.
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 
@@ -94,6 +97,7 @@ pub struct UpdateAppInfoLocalizationArgs {
     /// The appInfoLocalization ID.
     pub localization_id: String,
     /// Attributes to update (name, subtitle, privacyPolicyUrl, privacyPolicyText, privacyChoicesUrl).
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 

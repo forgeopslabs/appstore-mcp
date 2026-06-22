@@ -11,7 +11,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
-use super::{flatten_query, AppStoreServer};
+use super::{de_coerce_json_opt, de_coerce_map_opt, flatten_query, AppStoreServer};
 use crate::error::AscError;
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -23,11 +23,11 @@ pub struct RequestArgs {
     pub path: String,
     /// Optional query parameters, e.g. {"filter[bundleId]": "com.example.app", "limit": 50}.
     /// Array values are comma-joined.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "de_coerce_map_opt")]
     pub query: Option<Map<String, Value>>,
     /// Optional JSON:API request body for POST/PATCH/PUT — the full document,
     /// e.g. {"data": {"type": "apps", "id": "123", "attributes": {...}}}.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "de_coerce_json_opt")]
     pub body: Option<Value>,
 }
 
@@ -36,7 +36,7 @@ pub struct ListArgs {
     /// Collection path or full URL to GET, e.g. "/v1/apps".
     pub path: String,
     /// Optional filters, e.g. {"filter[name]": "MyApp"}.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "de_coerce_map_opt")]
     pub filters: Option<Map<String, Value>>,
     /// Comma-separated sort keys, e.g. "-createdDate".
     #[serde(default)]

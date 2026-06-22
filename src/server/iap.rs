@@ -10,7 +10,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, AppStoreServer};
+use super::{de_coerce_json, push_opt, AppStoreServer};
 
 /// The kind of in-app purchase.
 #[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
@@ -72,6 +72,7 @@ pub struct UpdateIapArgs {
     /// The in-app purchase ID.
     pub iap_id: String,
     /// Attributes to update, e.g. {"name": "...", "reviewNote": "...", "familySharable": true}.
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 
