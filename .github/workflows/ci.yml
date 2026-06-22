@@ -48,7 +48,7 @@ jobs:
               if obj.get('id') == 2:
                   n = len(obj['result']['tools'])
           print('tools served:', n)
-          assert n == 101, f'expected 101 tools, got {n}'
+          assert n == 113, f'expected 113 tools, got {n}'
           PY
 
   lint:

@@ -3,7 +3,7 @@
   "name": "appstore-mcp",
   "display_name": "App Store Connect",
   "version": "0.1.0",
-  "description": "Manage the Apple App Store Connect API from Claude: apps, in-app purchases, subscriptions, pricing, App Review submission, TestFlight, provisioning, analytics, and more (101 tools).",
+  "description": "Manage the Apple App Store Connect API from Claude: apps, in-app purchases, subscriptions, pricing, App Review submission, TestFlight, provisioning, analytics, and more (113 tools).",
   "long_description": "A Rust MCP server exposing the Apple App Store Connect API. Curated tools for apps & metadata, in-app purchases, subscriptions and their offers, pricing & availability, App Store versions, App Review submission, TestFlight, provisioning & signing, asset uploads, promoted purchases, customer reviews, phased release, users, in-app events, Xcode Cloud, and analytics reports, plus two generic JSON:API tools that reach any other endpoint. Authenticates with a short-lived ES256 JWT from your App Store Connect API key.",
   "author": {
     "name": "forgeopslabs",
