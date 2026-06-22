@@ -10,6 +10,7 @@ mod analytics;
 mod apps;
 mod assets;
 mod availability;
+mod custom_product_pages;
 mod events;
 mod generic;
 mod iap;
@@ -99,7 +100,8 @@ impl AppStoreServer {
                 + Self::promotions_router()
                 + Self::reviews_router()
                 + Self::users_router()
-                + Self::xcode_cloud_router(),
+                + Self::xcode_cloud_router()
+                + Self::custom_product_pages_router(),
         }
     }
 

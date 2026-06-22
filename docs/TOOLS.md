@@ -1,6 +1,6 @@
 # Tool reference
 
-All **101** tools exposed by `appstore-mcp`, grouped by domain. Auto-generated from the server's live `tools/list` schemas by `scripts/gen_tools_doc.py` — regenerate after changing tools.
+All **113** tools exposed by `appstore-mcp`, grouped by domain. Auto-generated from the server's live `tools/list` schemas by `scripts/gen_tools_doc.py` — regenerate after changing tools.
 
 > Required parameters are marked **yes**. IDs are opaque strings returned by the `list_*`/`get_*` tools — resolve them first. Anything not covered here is reachable via the generic `appstore_request` / `appstore_list` tools.
 
@@ -26,6 +26,7 @@ All **101** tools exposed by `appstore-mcp`, grouped by domain. Auto-generated f
 - [In-app events](#in-app-events) (3)
 - [Xcode Cloud](#xcode-cloud) (5)
 - [Analytics reports](#analytics-reports) (4)
+- [Custom product pages](#custom-product-pages) (12)
 
 ## Generic
 
@@ -1143,4 +1144,118 @@ List the downloadable segments for an analytics report instance. Each segment's 
 |---|---|---|---|
 | `instance_id` | string | **yes** | The analytics report instance ID. |
 | `limit` | integer | no | Page size (max 200). |
+
+## Custom product pages
+
+Marketing product-page variants: pages, versions, localized text, and image sets.
+
+### `list_custom_product_pages`
+
+List an app's custom product pages (CPP).
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `app_id` | string | **yes** | The app's App Store Connect ID. |
+| `include` | string | no | Comma-separated includes, e.g. "appCustomProductPageVersions". |
+| `limit` | integer | no | Page size (max 200). |
+
+### `get_custom_product_page`
+
+Get a custom product page by ID, with optional includes.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `page_id` | string | **yes** | The appCustomProductPage ID. |
+| `include` | string | no | Comma-separated includes, e.g. "appCustomProductPageVersions". |
+
+### `create_custom_product_page`
+
+Create a custom product page for an app (reference name). Then add a version, localizations, and screenshot/preview sets.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `app_id` | string | **yes** | The app's App Store Connect ID. |
+| `name` | string | **yes** | Reference name for the page (not customer-facing). |
+
+### `update_custom_product_page`
+
+Update a custom product page's name and/or visibility.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `page_id` | string | **yes** | The appCustomProductPage ID. |
+| `name` | string | no | New reference name. |
+| `visible` | boolean | no | Whether the page is visible/active. |
+
+### `delete_custom_product_page`
+
+Delete a custom product page by ID.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `page_id` | string | **yes** | The appCustomProductPage ID. |
+
+### `list_custom_product_page_versions`
+
+List a custom product page's versions.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `page_id` | string | **yes** | The appCustomProductPage ID. |
+| `limit` | integer | no | Page size (max 200). |
+
+### `create_custom_product_page_version`
+
+Create a new version of a custom product page (optionally with a deep link). A new version is the editable draft you add localizations and images to.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `page_id` | string | **yes** | The appCustomProductPage ID. |
+| `deep_link` | string | no | Optional deep link URL the page opens to in the app. |
+
+### `list_custom_product_page_localizations`
+
+List a custom product page version's localizations.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `version_id` | string | **yes** | The appCustomProductPageVersion ID. |
+| `limit` | integer | no | Page size (max 200). |
+
+### `create_custom_product_page_localization`
+
+Add a localized promotional text to a custom product page version for a given locale. Create screenshot/preview sets against the returned localization ID.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `locale` | string | **yes** | BCP-47 locale, e.g. "en-US". |
+| `version_id` | string | **yes** | The appCustomProductPageVersion ID. |
+| `promotional_text` | string | no | Optional promotional text shown on the page for this locale. |
+
+### `update_custom_product_page_localization`
+
+Update a custom product page localization's promotional text.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `localization_id` | string | **yes** | The appCustomProductPageLocalization ID. |
+| `promotional_text` | string | **yes** | New promotional text. |
+
+### `create_cpp_screenshot_set`
+
+Create an appScreenshotSet on a custom product page localization (e.g. display type APP_IPHONE_67). Upload images into it with upload_app_screenshot.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `localization_id` | string | **yes** | The appCustomProductPageLocalization ID. |
+| `screenshot_display_type` | string | **yes** | Display type, e.g. "APP_IPHONE_67", "APP_IPAD_PRO_129". |
+
+### `create_cpp_preview_set`
+
+Create an appPreviewSet on a custom product page localization (e.g. preview type IPHONE_67). Upload videos into it with upload_app_preview.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `localization_id` | string | **yes** | The appCustomProductPageLocalization ID. |
+| `preview_type` | string | **yes** | Preview type, e.g. "IPHONE_67", "IPAD_PRO_129". |
 
