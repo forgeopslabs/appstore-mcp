@@ -72,6 +72,13 @@ GROUPS = [
     ("Analytics reports", "Request and read App Store analytics reports.",
      ["request_analytics_report", "list_analytics_reports", "list_analytics_report_instances",
       "list_analytics_report_segments"]),
+    ("Custom product pages", "Marketing product-page variants: pages, versions, localized text, and image sets.",
+     ["list_custom_product_pages", "get_custom_product_page", "create_custom_product_page",
+      "update_custom_product_page", "delete_custom_product_page",
+      "list_custom_product_page_versions", "create_custom_product_page_version",
+      "list_custom_product_page_localizations", "create_custom_product_page_localization",
+      "update_custom_product_page_localization", "create_cpp_screenshot_set",
+      "create_cpp_preview_set"]),
 ]
 
 

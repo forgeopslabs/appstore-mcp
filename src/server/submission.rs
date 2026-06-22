@@ -16,6 +16,8 @@ use super::versions::Platform;
 use super::{push_opt, set_opt_str, AppStoreServer};
 
 /// What a review-submission item points at.
+// Variants mirror Apple's resource types, which all start with "App".
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReviewItemKind {
@@ -23,6 +25,8 @@ pub enum ReviewItemKind {
     AppStoreVersion,
     /// An in-app event.
     AppEvent,
+    /// A custom product page version.
+    AppCustomProductPageVersion,
 }
 
 impl ReviewItemKind {
@@ -31,6 +35,10 @@ impl ReviewItemKind {
         match self {
             ReviewItemKind::AppStoreVersion => ("appStoreVersion", "appStoreVersions"),
             ReviewItemKind::AppEvent => ("appEvent", "appEvents"),
+            ReviewItemKind::AppCustomProductPageVersion => (
+                "appCustomProductPageVersion",
+                "appCustomProductPageVersions",
+            ),
         }
     }
 }
@@ -429,6 +437,22 @@ mod tests {
         let rels = &b["data"]["relationships"];
         assert_eq!(rels["appEvent"]["data"]["type"], "appEvents");
         assert_eq!(rels["appEvent"]["data"]["id"], "evt-2");
+        assert!(rels.get("appStoreVersion").is_none());
+    }
+
+    #[test]
+    fn review_item_body_maps_custom_product_page_version_kind() {
+        let b = review_item_body(
+            "sub-1",
+            ReviewItemKind::AppCustomProductPageVersion,
+            "cppv-3",
+        );
+        let rels = &b["data"]["relationships"];
+        assert_eq!(
+            rels["appCustomProductPageVersion"]["data"]["type"],
+            "appCustomProductPageVersions"
+        );
+        assert_eq!(rels["appCustomProductPageVersion"]["data"]["id"], "cppv-3");
         assert!(rels.get("appStoreVersion").is_none());
     }
 

@@ -6,7 +6,7 @@ lifecycle — apps & metadata, in-app purchases, subscriptions and their offers,
 pricing & availability, App Store versions, App Review submission, TestFlight,
 provisioning & signing, asset uploads, promoted purchases, customer reviews,
 phased release, users & access, in-app events, Xcode Cloud, and analytics
-reports — across **101 tools**, and can reach *any* other App Store Connect
+reports — across **113 tools**, and can reach *any* other App Store Connect
 endpoint through two generic JSON:API tools.
 
 Built on the official [`rmcp`](https://crates.io/crates/rmcp) SDK over stdio.
@@ -20,11 +20,11 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 [JSON:API](https://jsonapi.org). Rather than a tool per endpoint, this server is
 **hybrid**:
 
-- **Curated tools** (99) for the common, multi-step, or error-prone workflows —
+- **Curated tools** (111) for the common, multi-step, or error-prone workflows —
   apps & metadata, IAPs, subscriptions & offers, versions, pricing, availability,
   App Review submission, TestFlight, provisioning, asset uploads, promoted
   purchases, customer reviews, phased release, users, in-app events, Xcode Cloud,
-  and analytics reports.
+  analytics reports, and custom product pages.
 - **Two generic escape-hatch tools** — `appstore_request` and `appstore_list` —
   that can call *any* endpoint with raw JSON:API documents.
 
@@ -52,8 +52,10 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **In-app events** | `create_app_event`, `create_app_event_localization`, `upload_app_event_screenshot` |
 | **Xcode Cloud** | `list_ci_products`, `list_ci_workflows`, `start_ci_build`, `get_ci_build_run`, `list_ci_build_actions` |
 | **Analytics reports** | `request_analytics_report`, `list_analytics_reports`, `list_analytics_report_instances`, `list_analytics_report_segments` |
+| **Custom product pages** | `list_custom_product_pages`, `get_custom_product_page`, `create_custom_product_page`, `update_custom_product_page`, `delete_custom_product_page`, `list_custom_product_page_versions`, `create_custom_product_page_version`, `list_custom_product_page_localizations`, `create_custom_product_page_localization`, `update_custom_product_page_localization`, `create_cpp_screenshot_set`, `create_cpp_preview_set` |
 
-See **[docs/TOOLS.md](docs/TOOLS.md)** for each tool's description and parameters.
+See **[docs/TOOLS.md](docs/TOOLS.md)** for each tool's description and parameters. Custom product page
+images are uploaded with the existing `upload_app_screenshot` / `upload_app_preview` tools.
 
 ## Install
 
