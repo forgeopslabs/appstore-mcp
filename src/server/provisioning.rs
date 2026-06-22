@@ -13,7 +13,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, AppStoreServer};
+use super::{de_coerce_json_opt, push_opt, AppStoreServer};
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ListArgs {
@@ -71,7 +71,7 @@ pub struct EnableBundleIdCapabilityArgs {
     /// Optional array of capability-setting objects (free-form JSON array).
     /// Only send when the capability requires settings (e.g. iCloud containers,
     /// App Groups identifiers). Structure matches Apple's `CapabilitySetting` model.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "de_coerce_json_opt")]
     pub settings: Option<Value>,
 }
 

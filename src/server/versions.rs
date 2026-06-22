@@ -7,7 +7,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::{push_opt, AppStoreServer};
+use super::{de_coerce_json, push_opt, AppStoreServer};
 
 /// Target platform for an App Store version.
 #[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
@@ -87,6 +87,7 @@ pub struct UpdateVersionLocalizationArgs {
     /// The appStoreVersionLocalization ID.
     pub localization_id: String,
     /// Attributes to update (description, keywords, whatsNew, promotionalText, marketingUrl, supportUrl).
+    #[serde(deserialize_with = "de_coerce_json")]
     pub attributes: Value,
 }
 
