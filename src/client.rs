@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::Bytes;
-use reqwest::{header::RETRY_AFTER, Client, Method, RequestBuilder, Response};
+use reqwest::{header::RETRY_AFTER, Client, Method, RequestBuilder, Response, Url};
 use serde_json::{json, Value};
 
 use crate::auth::TokenProvider;
@@ -67,7 +67,7 @@ impl AscClient {
         query: &[(String, String)],
         body: Option<Value>,
     ) -> Result<Value, AscError> {
-        let url = self.resolve_url(path);
+        let url = self.resolve_url(path)?;
         let idempotent = retry::is_idempotent(&method);
 
         let response = self
@@ -258,18 +258,61 @@ impl AscClient {
         }
     }
 
-    /// Join a relative path onto the configured base URL, or pass an absolute URL through.
-    fn resolve_url(&self, path: &str) -> String {
-        if path.starts_with("http://") || path.starts_with("https://") {
-            path.to_string()
-        } else {
-            format!(
+    /// Join a relative path onto the configured base URL, or accept an absolute
+    /// URL **only when it points at the configured host**.
+    ///
+    /// Absolute URLs are accepted because the API hands them back: `links.next`
+    /// on a collection response is absolute, and callers pass it through as a
+    /// cursor. They are *checked* because [`AscClient::request`] attaches the
+    /// bearer token to whatever this returns, and `path` can come from tool
+    /// input. Without the check, a caller-supplied URL naming any host would be
+    /// sent a live App Store Connect token.
+    ///
+    /// The comparison is same-origin — scheme, host and effective port — against
+    /// `base_url`, so `ASC_BASE_URL` keeps working for a proxy or a test server.
+    fn resolve_url(&self, path: &str) -> Result<String, AscError> {
+        if !(path.starts_with("http://") || path.starts_with("https://")) {
+            return Ok(format!(
                 "{}/{}",
                 self.config.base_url.trim_end_matches('/'),
                 path.trim_start_matches('/')
-            )
+            ));
+        }
+
+        let candidate = Url::parse(path)
+            .map_err(|e| AscError::InvalidRequest(format!("could not parse URL '{path}': {e}")))?;
+        let base = Url::parse(&self.config.base_url).map_err(|e| {
+            AscError::InvalidRequest(format!(
+                "configured base URL '{}' is not a valid URL: {e}",
+                self.config.base_url
+            ))
+        })?;
+
+        if same_origin(&candidate, &base) {
+            Ok(path.to_string())
+        } else {
+            Err(AscError::InvalidRequest(format!(
+                "refusing to send an authenticated request to '{}': only the configured \
+                 host '{}' is allowed. Absolute URLs are accepted solely so that pagination \
+                 cursors returned by the API can be followed.",
+                candidate
+                    .host_str()
+                    .map(|h| h.to_string())
+                    .unwrap_or_else(|| "<no host>".to_string()),
+                base.host_str().unwrap_or("<no host>")
+            )))
         }
     }
+}
+
+/// Whether two URLs share a scheme, host and effective port.
+///
+/// `Url::port_or_known_default` resolves the implicit 443/80 so that
+/// `https://host` and `https://host:443` compare equal.
+fn same_origin(a: &Url, b: &Url) -> bool {
+    a.scheme() == b.scheme()
+        && a.host_str() == b.host_str()
+        && a.port_or_known_default() == b.port_or_known_default()
 }
 
 async fn sleep(delay: Duration) {
@@ -467,23 +510,60 @@ mod tests {
         );
     }
 
-    #[test]
-    fn resolve_url_handles_relative_and_absolute_paths() {
-        let client = AscClient::new(
+    fn test_client() -> AscClient {
+        AscClient::new(
             Config::from_parts(None, None, None).with_base_url("https://api.example.com/"),
-        );
+        )
+    }
+
+    #[test]
+    fn resolve_url_joins_relative_paths_onto_the_base() {
+        let client = test_client();
         assert_eq!(
-            client.resolve_url("/v1/apps"),
+            client.resolve_url("/v1/apps").unwrap(),
             "https://api.example.com/v1/apps"
         );
         assert_eq!(
-            client.resolve_url("v2/inAppPurchases/1"),
+            client.resolve_url("v2/inAppPurchases/1").unwrap(),
             "https://api.example.com/v2/inAppPurchases/1"
         );
-        assert_eq!(
-            client.resolve_url("https://other.example.com/v1/apps?cursor=x"),
-            "https://other.example.com/v1/apps?cursor=x"
-        );
+    }
+
+    #[test]
+    fn resolve_url_accepts_an_absolute_url_on_the_configured_host() {
+        // This is what makes pagination work: `links.next` comes back absolute.
+        let client = test_client();
+        let cursor = "https://api.example.com/v1/apps?cursor=x";
+        assert_eq!(client.resolve_url(cursor).unwrap(), cursor);
+        // Explicit default port is the same origin as an implicit one.
+        assert!(client
+            .resolve_url("https://api.example.com:443/v1/apps")
+            .is_ok());
+    }
+
+    #[test]
+    fn resolve_url_refuses_to_send_the_token_to_another_host() {
+        let client = test_client();
+        for hostile in [
+            "https://other.example.com/v1/apps?cursor=x",
+            "https://api.example.com.evil.test/v1/apps",
+            "https://evil.test/?x=https://api.example.com",
+            "http://api.example.com/v1/apps", // scheme downgrade
+            "https://api.example.com:8443/v1/apps", // different port
+            "http://127.0.0.1:1/",
+        ] {
+            let err = match client.resolve_url(hostile) {
+                Ok(url) => panic!(
+                    "resolve_url must reject '{hostile}', but it returned '{url}' \
+                     — that result is sent a bearer token"
+                ),
+                Err(e) => e,
+            };
+            assert!(
+                matches!(err, AscError::InvalidRequest(_)),
+                "expected InvalidRequest for {hostile}, got {err:?}"
+            );
+        }
     }
 
     // ---- Against a mock API ------------------------------------------------
@@ -909,6 +989,39 @@ mod tests {
                 .await
                 .unwrap_err();
             assert!(matches!(err, AscError::InvalidRequest(_)), "{err:?}");
+        }
+
+        #[tokio::test]
+        async fn a_hostile_absolute_url_is_refused_before_a_token_is_sent() {
+            // Two live servers: the configured API, and a host a caller names.
+            // The credentials sign, so if validation ran after token creation
+            // or dispatch, the hostile server would see a request.
+            let api = MockServer::start().await;
+            let hostile = MockServer::start().await;
+            for server in [&api, &hostile] {
+                Mock::given(wiremock::matchers::any())
+                    .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
+                    .expect(0)
+                    .mount(server)
+                    .await;
+            }
+            let client = test_client(&api.uri());
+            let target = format!("{}/v1/apps?cursor=x", hostile.uri());
+
+            let err = client.get(&target, &[]).await.unwrap_err();
+            assert!(matches!(err, AscError::InvalidRequest(_)), "{err:?}");
+
+            let err = client
+                .request(Method::POST, &target, &[], Some(json!({ "data": {} })))
+                .await
+                .unwrap_err();
+            assert!(matches!(err, AscError::InvalidRequest(_)), "{err:?}");
+
+            assert!(
+                hostile.received_requests().await.unwrap().is_empty(),
+                "the hostile host was contacted"
+            );
+            assert!(api.received_requests().await.unwrap().is_empty());
         }
     }
 }
