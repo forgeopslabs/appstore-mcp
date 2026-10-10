@@ -8,6 +8,7 @@
 
 mod analytics;
 mod apps;
+mod asset_library;
 mod assets;
 mod availability;
 pub mod catalog;
@@ -159,7 +160,10 @@ impl AppStoreServer {
             (Group::Submission, Self::submission_router()),
             (Group::TestFlight, Self::testflight_router()),
             (Group::Provisioning, Self::provisioning_router()),
-            (Group::Assets, Self::assets_router()),
+            (
+                Group::Assets,
+                Self::assets_router() + Self::asset_library_router(),
+            ),
             (Group::Offers, Self::offers_router()),
             (Group::OfferCodes, Self::offer_codes_router()),
             (Group::Promotions, Self::promotions_router()),

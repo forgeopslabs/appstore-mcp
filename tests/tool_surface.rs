@@ -116,6 +116,9 @@ fn exactly_the_expected_tools_are_marked_destructive() {
         destructive,
         vec![
             "appstore_request", // can reach every DELETE endpoint Apple has
+            "delete_asset_library_image",
+            "delete_asset_library_placement",
+            "delete_asset_library_video",
             "delete_custom_product_page",
             "delete_in_app_purchase",
             "delete_preview_set",

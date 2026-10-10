@@ -8,7 +8,7 @@
     {
       "name": "appstore-mcp",
       "source": "./plugins/appstore-mcp",
-      "description": "Apple App Store Connect API \u2014 114 tools (apps, in-app purchases, subscriptions, TestFlight, provisioning, analytics, and more).",
+      "description": "Apple App Store Connect API \u2014 126 tools (apps, in-app purchases, subscriptions, TestFlight, provisioning, analytics, and more).",
       "version": "0.4.0",
       "author": {
         "name": "forgeopslabs"

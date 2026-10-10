@@ -12,6 +12,10 @@
 //! 3. **Commit** — `PATCH` the resource with `{ uploaded: true, sourceFileChecksum }`
 //!    where the checksum is the MD5 of the whole file.
 //!
+//! App Asset Library images and videos (API 4.5.1) use the same protocol except
+//! that the commit carries `{ uploaded: true }` alone: their update request has
+//! no checksum attribute, and Apple rejects attributes a resource doesn't have.
+//!
 //! The file is never held in memory in full: the checksum is computed by
 //! streaming, and each operation reads only its own byte range. Peak memory is
 //! one chunk — the size Apple chose — rather than the size of the asset. A
@@ -51,6 +55,47 @@ impl AscClient {
         relationships: Value,
         file_path: &str,
     ) -> Result<Value, AscError> {
+        self.reserve_upload_commit(
+            collection_path,
+            resource_type,
+            extra_attributes,
+            relationships,
+            file_path,
+            true,
+        )
+        .await
+    }
+
+    /// The same flow for App Asset Library images and videos, whose commit is
+    /// `{ uploaded: true }` with no checksum.
+    pub async fn upload_library_asset(
+        &self,
+        collection_path: &str,
+        resource_type: &str,
+        extra_attributes: Value,
+        relationships: Value,
+        file_path: &str,
+    ) -> Result<Value, AscError> {
+        self.reserve_upload_commit(
+            collection_path,
+            resource_type,
+            extra_attributes,
+            relationships,
+            file_path,
+            false,
+        )
+        .await
+    }
+
+    async fn reserve_upload_commit(
+        &self,
+        collection_path: &str,
+        resource_type: &str,
+        extra_attributes: Value,
+        relationships: Value,
+        file_path: &str,
+        send_checksum: bool,
+    ) -> Result<Value, AscError> {
         let metadata = tokio::fs::metadata(file_path)
             .await
             .map_err(|e| AscError::Upload(format!("cannot read asset file '{file_path}': {e}")))?;
@@ -66,7 +111,11 @@ impl AscClient {
             .and_then(|s| s.to_str())
             .unwrap_or("asset")
             .to_string();
-        let checksum = md5_file(file_path).await?;
+        let checksum = if send_checksum {
+            Some(md5_file(file_path).await?)
+        } else {
+            None
+        };
 
         // 1. Reserve — build attributes from { fileName, fileSize } merged with any extras.
         if !extra_attributes.is_null() && !extra_attributes.is_object() {
@@ -110,11 +159,15 @@ impl AscClient {
 
         // 3. Commit.
         let commit_path = format!("{}/{}", collection_path.trim_end_matches('/'), id);
+        let mut commit_attrs = json!({ "uploaded": true });
+        if let Some(checksum) = checksum {
+            commit_attrs["sourceFileChecksum"] = json!(checksum);
+        }
         let commit_body = json!({
             "data": {
                 "type": resource_type,
                 "id": id,
-                "attributes": { "uploaded": true, "sourceFileChecksum": checksum },
+                "attributes": commit_attrs,
             }
         });
         self.patch(&commit_path, commit_body).await
@@ -428,6 +481,79 @@ mod tests {
             assert_eq!(
                 body["data"]["attributes"]["sourceFileChecksum"],
                 md5_hex(CONTENT)
+            );
+            let _ = std::fs::remove_file(file);
+        }
+
+        #[tokio::test]
+        async fn a_library_asset_commit_carries_no_checksum() {
+            // appAssetLibraryImages/Videos have no sourceFileChecksum attribute,
+            // and Apple rejects an attribute the resource doesn't define.
+            let server = MockServer::start().await;
+            let base = server.uri();
+            Mock::given(method("POST"))
+                .and(path("/v1/appAssetLibraryImages"))
+                .respond_with(ResponseTemplate::new(201).set_body_json(json!({
+                    "data": { "id": "img-1", "attributes": { "uploadOperations": [
+                        { "method": "PUT", "url": format!("{base}/upload/0"),
+                          "offset": 0, "length": 10, "requestHeaders": [] }
+                    ]}}
+                })))
+                .expect(1)
+                .mount(&server)
+                .await;
+            Mock::given(method("PUT"))
+                .respond_with(ResponseTemplate::new(200))
+                .expect(1)
+                .mount(&server)
+                .await;
+            Mock::given(method("PATCH"))
+                .and(path("/v1/appAssetLibraryImages/img-1"))
+                .respond_with(
+                    ResponseTemplate::new(200).set_body_json(json!({ "data": { "id": "img-1" } })),
+                )
+                .expect(1)
+                .mount(&server)
+                .await;
+
+            let file = temp_file("upload-library", CONTENT);
+            test_client(&server.uri())
+                .upload_library_asset(
+                    "/v1/appAssetLibraryImages",
+                    "appAssetLibraryImages",
+                    json!({ "category": "APP_SCREENSHOTS_AND_PREVIEWS" }),
+                    json!({ "assetLibrary": { "data": { "type": "appAssetLibraries", "id": "lib-1" } } }),
+                    &file,
+                )
+                .await
+                .unwrap();
+
+            let requests = server.received_requests().await.unwrap();
+            let reserve: Value = serde_json::from_slice(
+                &requests
+                    .iter()
+                    .find(|r| r.method == wiremock::http::Method::POST)
+                    .unwrap()
+                    .body,
+            )
+            .unwrap();
+            assert_eq!(reserve["data"]["attributes"]["fileSize"], 10);
+            assert_eq!(
+                reserve["data"]["attributes"]["category"],
+                "APP_SCREENSHOTS_AND_PREVIEWS"
+            );
+            let commit: Value = serde_json::from_slice(
+                &requests
+                    .iter()
+                    .find(|r| r.method == wiremock::http::Method::PATCH)
+                    .unwrap()
+                    .body,
+            )
+            .unwrap();
+            assert_eq!(
+                commit["data"]["attributes"],
+                json!({ "uploaded": true }),
+                "library commit must not send sourceFileChecksum"
             );
             let _ = std::fs::remove_file(file);
         }

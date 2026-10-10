@@ -49,6 +49,8 @@ GROUPS = [
     ("Assets", "Screenshot/preview sets and uploads (reserve -> upload -> commit).",
      ["upload_app_screenshot", "upload_app_preview", "create_screenshot_set",
       "create_preview_set", "delete_screenshot_set", "delete_preview_set", "reorder_screenshots"]),
+    ("App Asset Library", "Upload images and videos once, then place them on version, custom product page, event, and treatment localizations (API 4.5.1; replaces screenshot/preview sets).",
+     ["get_app_asset_library", "list_asset_library_images", "list_asset_library_videos", "upload_asset_library_image", "upload_asset_library_video", "delete_asset_library_image", "delete_asset_library_video", "create_asset_library_placement", "list_asset_library_placements", "delete_asset_library_placement", "set_asset_library_placement_order", "list_asset_library_ref_data"]),
     ("Subscription offers", "Introductory, promotional, and win-back offers.",
      ["create_introductory_offer", "create_promotional_offer", "create_winback_offer",
       "list_winback_offers"]),

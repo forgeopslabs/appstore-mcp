@@ -5,7 +5,7 @@ edition = "2021"
 # Verified against the locked dependency graph, not assumed: `darling` and
 # `time` are the binding constraint. The `msrv` CI job builds on exactly this.
 rust-version = "1.88"
-description = "MCP server exposing the Apple App Store Connect API (114 tools)"
+description = "MCP server exposing the Apple App Store Connect API (126 tools)"
 license = "MIT"
 repository = "https://github.com/forgeopslabs/appstore-mcp"
 homepage = "https://github.com/forgeopslabs/appstore-mcp"

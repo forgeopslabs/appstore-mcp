@@ -1,6 +1,6 @@
 # Tool reference
 
-All **114** tools exposed by `appstore-mcp`, grouped by domain (34 read-only). Auto-generated from the server's live `tools/list` schemas by `scripts/gen_tools_doc.py` — regenerate after changing tools.
+All **126** tools exposed by `appstore-mcp`, grouped by domain (39 read-only). Auto-generated from the server's live `tools/list` schemas by `scripts/gen_tools_doc.py` — regenerate after changing tools.
 
 > Required parameters are marked **yes**. IDs are opaque strings returned by the `list_*`/`get_*` tools — resolve them first. Anything not covered here is reachable via the generic `appstore_request` / `appstore_list` tools.
 
@@ -19,6 +19,7 @@ All **114** tools exposed by `appstore-mcp`, grouped by domain (34 read-only). A
 - [TestFlight](#testflight) (10)
 - [Provisioning & signing](#provisioning--signing) (10)
 - [Assets](#assets) (7)
+- [App Asset Library](#app-asset-library) (12)
 - [Subscription offers](#subscription-offers) (4)
 - [Offer codes](#offer-codes) (4)
 - [Promoted purchases](#promoted-purchases) (4)
@@ -824,7 +825,7 @@ Screenshot/preview sets and uploads (reserve -> upload -> commit).
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Upload an app screenshot into an appScreenshotSet (reserve → upload → commit with MD5 verification). Provide the set ID and a local image path.
+Upload an app screenshot into an appScreenshotSet (reserve → upload → commit with MD5 verification). Provide the set ID and a local image path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -835,7 +836,7 @@ Upload an app screenshot into an appScreenshotSet (reserve → upload → commit
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Upload an app preview video into an appPreviewSet (reserve → upload → commit with MD5 verification). Provide the set ID and a local video path.
+Upload an app preview video into an appPreviewSet (reserve → upload → commit with MD5 verification). Provide the set ID and a local video path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -846,7 +847,7 @@ Upload an app preview video into an appPreviewSet (reserve → upload → commit
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Create an appScreenshotSet for a version localization + display type (e.g. APP_IPHONE_67). Upload screenshots into it with upload_app_screenshot.
+Create an appScreenshotSet for a version localization + display type (e.g. APP_IPHONE_67). Upload screenshots into it with upload_app_screenshot. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -857,7 +858,7 @@ Create an appScreenshotSet for a version localization + display type (e.g. APP_I
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Create an appPreviewSet for a version localization + preview type (e.g. IPHONE_67). Upload previews into it with upload_app_preview.
+Create an appPreviewSet for a version localization + preview type (e.g. IPHONE_67). Upload previews into it with upload_app_preview. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -888,12 +889,165 @@ Delete an appPreviewSet (and its previews) by ID.
 
 🟡 **Writes** — sets fields; calling it twice leaves the same state.
 
-Set the display order of screenshots within an appScreenshotSet by passing the screenshot IDs in the desired order.
+Set the display order of screenshots within an appScreenshotSet by passing the screenshot IDs in the desired order. Deprecated by Apple in API 4.5.1; prefer set_asset_library_placement_order.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `ordered_screenshot_ids` | array of string | **yes** | The screenshot IDs in the desired display order. |
 | `set_id` | string | **yes** | The appScreenshotSet ID. |
+
+## App Asset Library
+
+Upload images and videos once, then place them on version, custom product page, event, and treatment localizations (API 4.5.1; replaces screenshot/preview sets).
+
+### `get_app_asset_library`
+
+🟢 **Read-only** — safe to call without confirmation.
+
+Get an app's App Asset Library (its ID is needed to upload and list library images and videos). The library replaces screenshot and preview sets as of API 4.5.1.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `app_id` | string | **yes** | The app's App Store Connect ID. |
+
+### `list_asset_library_images`
+
+🟢 **Read-only** — safe to call without confirmation.
+
+List the images in an App Asset Library, optionally filtered by category, state, or reference name, and optionally with their placements.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_library_id` | string | **yes** | The appAssetLibrary ID (from get_app_asset_library). |
+| `category` | string | no | Filter by category: "APP_SCREENSHOTS_AND_PREVIEWS" or "CREATIVE_ASSETS". |
+| `include_placements` | boolean | no | Set to true to include each asset's placements. |
+| `limit` | integer | no | Page size (max 200). |
+| `reference_name` | string | no | Filter by reference name. |
+| `state` | string | no | Filter by state, e.g. "COMPLETE", "AWAITING_UPLOAD", "FAILED", "ARCHIVED". |
+
+### `list_asset_library_videos`
+
+🟢 **Read-only** — safe to call without confirmation.
+
+List the videos in an App Asset Library, optionally filtered by category, state, or reference name, and optionally with their placements.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_library_id` | string | **yes** | The appAssetLibrary ID (from get_app_asset_library). |
+| `category` | string | no | Filter by category: "APP_SCREENSHOTS_AND_PREVIEWS" or "CREATIVE_ASSETS". |
+| `include_placements` | boolean | no | Set to true to include each asset's placements. |
+| `limit` | integer | no | Page size (max 200). |
+| `reference_name` | string | no | Filter by reference name. |
+| `state` | string | no | Filter by state, e.g. "COMPLETE", "AWAITING_UPLOAD", "FAILED", "ARCHIVED". |
+
+### `upload_asset_library_image`
+
+🟡 **Writes** — creates something new; calling it twice creates two.
+
+Upload an image to an App Asset Library (reserve → upload → commit). Then place it on a localization with create_asset_library_placement.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_library_id` | string | **yes** | The appAssetLibrary ID (from get_app_asset_library). |
+| `file_path` | string | **yes** | Local path to the image file (PNG/JPEG). |
+| `category` | string | no | "APP_SCREENSHOTS_AND_PREVIEWS" (default) or "CREATIVE_ASSETS". |
+| `reference_name` | string | no | An internal name to find the asset by later. |
+
+### `upload_asset_library_video`
+
+🟡 **Writes** — creates something new; calling it twice creates two.
+
+Upload a video (app preview or creative) to an App Asset Library (reserve → upload → commit). Then place it on a localization with create_asset_library_placement.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_library_id` | string | **yes** | The appAssetLibrary ID (from get_app_asset_library). |
+| `file_path` | string | **yes** | Local path to the video file. |
+| `category` | string | no | "APP_SCREENSHOTS_AND_PREVIEWS" (default) or "CREATIVE_ASSETS". |
+| `preview_frame_time_code` | string | no | Poster-frame timecode, e.g. "00:00:05:00". |
+| `reference_name` | string | no | An internal name to find the asset by later. |
+
+### `delete_asset_library_image`
+
+🔴 **Destructive** — removes or invalidates something.
+
+Delete an image from an App Asset Library by ID.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_id` | string | **yes** | The asset ID to delete. |
+
+### `delete_asset_library_video`
+
+🔴 **Destructive** — removes or invalidates something.
+
+Delete a video from an App Asset Library by ID.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_id` | string | **yes** | The asset ID to delete. |
+
+### `create_asset_library_placement`
+
+🟡 **Writes** — creates something new; calling it twice creates two.
+
+Place an App Asset Library image or video on a localization: an App Store version, custom product page, in-app event, or product page optimization treatment. Use list_asset_library_ref_data for valid placement types and groups.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `asset_id` | string | **yes** | The appAssetLibraryImage or appAssetLibraryVideo ID to place. |
+| `media_type` | string | **yes** | "image" or "video". |
+| `placement_type` | string | **yes** | e.g. "APP_SCREENSHOT", "APP_PREVIEW", "IMESSAGE_APP_SCREENSHOT", "EVENT_CARD_ASSET", "EVENT_DETAILS_PAGE_ASSET". |
+| `target_id` | string | **yes** | The ID of the target localization. |
+| `target_type` | string | **yes** | Where to place it: "app_store_version_localization", "custom_product_page_localization", "app_event_localization", or "experiment_treatment_localization". |
+| `placement_group` | string | no | The device profile group, e.g. "IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE"; valid values are the placementProfileGroups in list_asset_library_ref_data. |
+
+### `list_asset_library_placements`
+
+🟢 **Read-only** — safe to call without confirmation.
+
+List the App Asset Library placements on a localization (App Store version, custom product page, in-app event, or product page optimization treatment).
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `target_id` | string | **yes** | The ID of the target localization. |
+| `target_type` | string | **yes** | "app_store_version_localization", "custom_product_page_localization", "app_event_localization", or "experiment_treatment_localization". |
+| `limit` | integer | no | Page size (max 200). |
+
+### `delete_asset_library_placement`
+
+🔴 **Destructive** — removes or invalidates something.
+
+Delete an App Asset Library placement, removing the asset from that localization. The asset itself stays in the library.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `placement_id` | string | **yes** | The appAssetLibraryPlacement ID to delete. |
+
+### `set_asset_library_placement_order`
+
+🟡 **Writes** — sets fields; calling it twice leaves the same state.
+
+Set the display order of App Asset Library placements within one placement group on a localization, by passing the placement IDs in the desired order.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ordered_placement_ids` | array of string | **yes** | Placement IDs in the desired display order. |
+| `placement_group` | string | **yes** | The device profile group whose order is being set, e.g. "IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE". |
+| `target_id` | string | **yes** | The ID of the target localization. |
+| `target_type` | string | **yes** | "app_store_version_localization", "custom_product_page_localization", or "experiment_treatment_localization". In-app event placements have no order. |
+
+### `list_asset_library_ref_data`
+
+🟢 **Read-only** — safe to call without confirmation.
+
+List App Asset Library reference data: supported placement types, placement groups per device, image and video specs (dimensions, file types, limits), and per-feature limits. Read this instead of hard-coding screenshot sizes.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `features` | string | no | Comma-separated features, e.g. "APP_STORE_VERSIONS,CUSTOM_PRODUCT_PAGES". |
+| `placement_profile_groups` | string | no | Comma-separated placement profile groups. |
+| `placement_types` | string | no | Comma-separated placement types, e.g. "APP_SCREENSHOT,APP_PREVIEW". |
 
 ## Subscription offers
 
@@ -1233,7 +1387,7 @@ Add a localized name and description to an in-app event for a given locale (e.g.
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Upload a screenshot for an in-app event localization (reserve → upload → commit with MD5 verification). Provide the app_event_localization_id, app_event_asset_type (EVENT_CARD or EVENT_DETAILS_PAGE), and a local image file_path.
+Upload a screenshot for an in-app event localization (reserve → upload → commit with MD5 verification). Provide the app_event_localization_id, app_event_asset_type (EVENT_CARD or EVENT_DETAILS_PAGE), and a local image file_path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -1483,7 +1637,7 @@ Update a custom product page localization's promotional text.
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Create an appScreenshotSet on a custom product page localization (e.g. display type APP_IPHONE_67). Upload images into it with upload_app_screenshot.
+Create an appScreenshotSet on a custom product page localization (e.g. display type APP_IPHONE_67). Upload images into it with upload_app_screenshot. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -1494,7 +1648,7 @@ Create an appScreenshotSet on a custom product page localization (e.g. display t
 
 🟡 **Writes** — creates something new; calling it twice creates two.
 
-Create an appPreviewSet on a custom product page localization (e.g. preview type IPHONE_67). Upload videos into it with upload_app_preview.
+Create an appPreviewSet on a custom product page localization (e.g. preview type IPHONE_67). Upload videos into it with upload_app_preview. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|

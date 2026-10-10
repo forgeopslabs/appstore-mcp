@@ -65,7 +65,7 @@ impl AppStoreServer {
     /// Upload an app screenshot into a screenshot set.
     #[tool(
         description = "Upload an app screenshot into an appScreenshotSet (reserve → upload → commit \
-with MD5 verification). Provide the set ID and a local image path."
+with MD5 verification). Provide the set ID and a local image path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement."
     )]
     async fn upload_app_screenshot(
         &self,
@@ -93,7 +93,7 @@ with MD5 verification). Provide the set ID and a local image path."
     /// Upload an app preview into a preview set.
     #[tool(
         description = "Upload an app preview video into an appPreviewSet (reserve → upload → commit \
-with MD5 verification). Provide the set ID and a local video path."
+with MD5 verification). Provide the set ID and a local video path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement."
     )]
     async fn upload_app_preview(
         &self,
@@ -121,7 +121,7 @@ with MD5 verification). Provide the set ID and a local video path."
     /// Create a screenshot set for a version localization.
     #[tool(
         description = "Create an appScreenshotSet for a version localization + display type (e.g. \
-APP_IPHONE_67). Upload screenshots into it with upload_app_screenshot."
+APP_IPHONE_67). Upload screenshots into it with upload_app_screenshot. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement."
     )]
     async fn create_screenshot_set(
         &self,
@@ -140,7 +140,7 @@ APP_IPHONE_67). Upload screenshots into it with upload_app_screenshot."
     /// Create a preview set for a version localization.
     #[tool(
         description = "Create an appPreviewSet for a version localization + preview type (e.g. \
-IPHONE_67). Upload previews into it with upload_app_preview."
+IPHONE_67). Upload previews into it with upload_app_preview. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement."
     )]
     async fn create_preview_set(
         &self,
@@ -184,7 +184,7 @@ IPHONE_67). Upload previews into it with upload_app_preview."
     /// Reorder the screenshots within a set.
     #[tool(
         description = "Set the display order of screenshots within an appScreenshotSet by passing \
-the screenshot IDs in the desired order."
+the screenshot IDs in the desired order. Deprecated by Apple in API 4.5.1; prefer set_asset_library_placement_order."
     )]
     async fn reorder_screenshots(
         &self,

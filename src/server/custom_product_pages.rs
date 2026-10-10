@@ -346,7 +346,7 @@ given locale. Create screenshot/preview sets against the returned localization I
     /// Create a screenshot set on a custom product page localization.
     #[tool(
         description = "Create an appScreenshotSet on a custom product page localization (e.g. \
-display type APP_IPHONE_67). Upload images into it with upload_app_screenshot."
+display type APP_IPHONE_67). Upload images into it with upload_app_screenshot. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement."
     )]
     async fn create_cpp_screenshot_set(
         &self,
@@ -364,7 +364,7 @@ display type APP_IPHONE_67). Upload images into it with upload_app_screenshot."
     /// Create a preview set on a custom product page localization.
     #[tool(
         description = "Create an appPreviewSet on a custom product page localization (e.g. preview \
-type IPHONE_67). Upload videos into it with upload_app_preview."
+type IPHONE_67). Upload videos into it with upload_app_preview. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_video + create_asset_library_placement."
     )]
     async fn create_cpp_preview_set(
         &self,

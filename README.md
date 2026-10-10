@@ -6,7 +6,7 @@ lifecycle — apps & metadata, in-app purchases, subscriptions and their offers,
 pricing & availability, App Store versions, App Review submission, TestFlight,
 provisioning & signing, asset uploads, promoted purchases, customer reviews,
 phased release, users & access, in-app events, Xcode Cloud, and analytics
-reports — across **114 tools**, and can reach *any* other App Store Connect
+reports — across **126 tools**, and can reach *any* other App Store Connect
 endpoint through two generic JSON:API tools.
 
 Built on the official [`rmcp`](https://crates.io/crates/rmcp) SDK over stdio.
@@ -48,6 +48,7 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 | **TestFlight** | `list_builds`, `list_beta_groups`, `create_beta_group`, `add_beta_tester`, `submit_build_for_beta_review`, `set_build_test_notes`, `set_build_beta_detail`, `set_beta_app_review_detail`, `expire_build`, `add_build_to_beta_group` |
 | **Provisioning & signing** | `list_bundle_ids`, `create_bundle_id`, `enable_bundle_id_capability`, `disable_bundle_id_capability`, `list_certificates`, `create_certificate`, `list_devices`, `register_device`, `list_profiles`, `create_profile` |
 | **Assets** | `upload_app_screenshot`, `upload_app_preview`, `create_screenshot_set`, `create_preview_set`, `delete_screenshot_set`, `delete_preview_set`, `reorder_screenshots` |
+| **App Asset Library** | `get_app_asset_library`, `list_asset_library_images`, `list_asset_library_videos`, `upload_asset_library_image`, `upload_asset_library_video`, `delete_asset_library_image`, `delete_asset_library_video`, `create_asset_library_placement`, `list_asset_library_placements`, `delete_asset_library_placement`, `set_asset_library_placement_order`, `list_asset_library_ref_data` |
 | **Subscription offers** | `create_introductory_offer`, `create_promotional_offer`, `create_winback_offer`, `list_winback_offers` |
 | **Offer codes** | `create_offer_code`, `generate_one_time_use_codes`, `create_custom_offer_code`, `list_offer_codes` |
 | **Promoted purchases** | `create_promoted_purchase`, `update_promoted_purchase`, `set_promoted_purchase_order`, `list_promoted_purchases` |
@@ -61,6 +62,12 @@ The App Store Connect API has hundreds of endpoints but is uniformly
 
 See **[docs/TOOLS.md](docs/TOOLS.md)** for each tool's description and parameters. Custom product page
 images are uploaded with the existing `upload_app_screenshot` / `upload_app_preview` tools.
+
+Apple deprecated screenshot sets, preview sets, and in-app event media in API 4.5.1 in favour
+of the **App Asset Library**: upload an image or video once with `upload_asset_library_image` /
+`upload_asset_library_video`, then attach it to any version, custom product page, event, or
+treatment localization with `create_asset_library_placement`. The set-based tools still work
+and remain available.
 
 ## Install
 

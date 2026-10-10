@@ -3,6 +3,27 @@
 All notable changes to `appstore-mcp`. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **App Asset Library** (App Store Connect API 4.5.1), 12 tools in the
+  `assets` group: `get_app_asset_library`, `list_asset_library_images`,
+  `list_asset_library_videos`, `upload_asset_library_image`,
+  `upload_asset_library_video`, `delete_asset_library_image`,
+  `delete_asset_library_video`, `create_asset_library_placement`,
+  `list_asset_library_placements`, `delete_asset_library_placement`,
+  `set_asset_library_placement_order`, and `list_asset_library_ref_data`.
+  Uploads reuse the existing reserve → upload → commit flow; the library's
+  commit sends `{ uploaded: true }` without `sourceFileChecksum`, which its
+  update request does not define.
+
+### Changed
+
+- The screenshot-set, preview-set, and in-app event screenshot tools now say in
+  their descriptions that Apple deprecated those resources in API 4.5.1 and
+  name the App Asset Library tool to use instead. They are not removed.
+
 ## [0.4.0] — 2026-09-23
 
 ### Added

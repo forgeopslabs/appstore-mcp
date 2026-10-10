@@ -177,7 +177,7 @@ optional."
     #[tool(
         description = "Upload a screenshot for an in-app event localization (reserve → upload → \
 commit with MD5 verification). Provide the app_event_localization_id, app_event_asset_type \
-(EVENT_CARD or EVENT_DETAILS_PAGE), and a local image file_path."
+(EVENT_CARD or EVENT_DETAILS_PAGE), and a local image file_path. Deprecated by Apple in API 4.5.1; prefer upload_asset_library_image + create_asset_library_placement."
     )]
     async fn upload_app_event_screenshot(
         &self,
